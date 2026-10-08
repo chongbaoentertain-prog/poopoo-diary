@@ -10,7 +10,7 @@ export function Avatar({ size = 40 }: { size?: number }) {
   if (!p) return null;
   return (
     <div className="grid place-items-center overflow-hidden rounded-full bg-tile" style={{ width: size, height: size }}>
-      <Poo characterId={p.characterId} stage={p.stage} size={size * 0.92} />
+      <Poo characterId={p.characterId} stage={p.stage} size={size * 0.92} scene={false} />
     </div>
   );
 }

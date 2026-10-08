@@ -4,7 +4,7 @@ import { CHARACTERS, charDef } from '../../data/characters';
 import { GraduatePanel } from '../character/GraduatePanel';
 import { useAppStore } from '../../store/useAppStore';
 
-export function ProfilePage() {
+export function ProfilePage({ onPicked }: { onPicked: () => void }) {
   const profile = useAppStore((s) => s.profile)!;
   const progress = useAppStore((s) => s.progress);
   const update = useAppStore((s) => s.updateProfile);
@@ -27,27 +27,30 @@ export function ProfilePage() {
       </div>
 
       <div className="space-y-2 rounded-2xl bg-porcelain p-4">
-        <div className="text-sm">头像(灰色的还没解锁)</div>
+        <div>
+          <div className="text-sm font-semibold">选择头像</div>
+          <div className="text-xs">已收集的伙伴排在前面,可以用它们当头像。灰色的还在等你遇见。</div>
+        </div>
         <div className="max-h-56 overflow-y-auto rounded-xl border-2 border-grout p-2">
           <div className="grid grid-cols-5 gap-2">
-            {CHARACTERS.map((c) => {
-              const p = progress.find((x) => x.characterId === c.id);
-              return p ? (
+            {[...CHARACTERS]
+              .map((c) => ({ c, p: progress.find((x) => x.characterId === c.id) }))
+              .sort((a, b) => Number(!!b.p) - Number(!!a.p))
+              .map(({ c, p }) => p ? (
                 <button key={c.id} aria-pressed={profile.avatarId === c.id} aria-label={c.name} onClick={() => update({ avatarId: c.id })}
-                  className={`rounded-full border-2 bg-tile p-1 ${profile.avatarId === c.id ? 'border-gold' : 'border-grout'}`}>
-                  <Poo characterId={c.id} stage={p.stage} size={48} />
+                  className={`grid aspect-square place-items-center rounded-full border-2 bg-tile ${profile.avatarId === c.id ? 'border-gold' : 'border-grout'}`}>
+                  <Poo characterId={c.id} stage={p.stage} size={44} scene={false} />
                 </button>
               ) : (
-                <div key={c.id} aria-label="未解锁" className="rounded-full border-2 border-transparent bg-neutral-300 p-1">
-                  <Poo characterId={c.id} stage={1} size={48} silhouette />
+                <div key={c.id} aria-label="未解锁" className="grid aspect-square place-items-center rounded-full border-2 border-transparent bg-neutral-300">
+                  <Poo characterId={c.id} stage={1} size={44} silhouette scene={false} />
                 </div>
-              );
-            })}
+              ))}
           </div>
         </div>
       </div>
 
-      <div className="space-y-2 rounded-2xl bg-porcelain p-4"><div className="text-sm font-semibold">更换角色</div><GraduatePanel /></div>
+      <div className="space-y-2 rounded-2xl bg-porcelain p-4"><div className="text-sm font-semibold">更换角色</div><GraduatePanel onPicked={onPicked} /></div>
 
       <div className="flex justify-center pt-2">
         <button onClick={() => window.confirm('清除所有签到记录和角色,重新开始?') && resetAll()}

@@ -6,7 +6,7 @@ import { currentStreak, groupByDate } from '../selectors';
 const setup = () => {
   const repo = createMemoryRepo();
   const store = createAppStore(repo);
-  store.getState().completeOnboarding({ nickname: '', avatarId: 'a1' }, 'gold');
+  store.getState().completeOnboarding({ nickname: '', avatarId: 'a1' }, 'gold-ingot');
   return { repo, store };
 };
 
@@ -33,13 +33,13 @@ describe('appStore', () => {
 
   it('满级前不能换角色;满级后毕业并选新角色', () => {
     const { store } = setup();
-    expect(() => store.getState().graduateAndPick('wood')).toThrow();
-    store.setState({ progress: [{ characterId: 'gold', xp: 1500, stage: 5, maxed: true, graduated: false }] });
-    store.getState().graduateAndPick('wood');
+    expect(() => store.getState().graduateAndPick('wood-bamboo')).toThrow();
+    store.setState({ progress: [{ characterId: 'gold-ingot', xp: 1500, stage: 5, maxed: true, graduated: false }] });
+    store.getState().graduateAndPick('wood-bamboo');
     const s = store.getState();
-    expect(s.activeCharacterId).toBe('wood');
-    expect(s.progress.find((p) => p.characterId === 'gold')?.graduated).toBe(true);
-    expect(() => store.getState().graduateAndPick('gold')).toThrow();
+    expect(s.activeCharacterId).toBe('wood-bamboo');
+    expect(s.progress.find((p) => p.characterId === 'gold-ingot')?.graduated).toBe(true);
+    expect(() => store.getState().graduateAndPick('gold-ingot')).toThrow();
   });
 
   it('currentStreak:今天没打卡时昨天仍算连续', () => {
@@ -66,5 +66,31 @@ describe('连续打卡不因跨月重置', () => {
     const { store } = setup();
     store.getState().checkIn('2026-09-01');
     expect(store.getState().checkInMany(range('2026-09-01', '2026-09-03')).added).toBe(2);
+  });
+});
+
+describe('心情', () => {
+  it('签到时选的心情写进印章,不选默认开心', () => {
+    const { store } = setup();
+    expect(store.getState().checkIn('2026-10-06', 'dizzy').checkIn.stampId).toBe('gold-ingot:1:dizzy');
+    expect(store.getState().checkIn('2026-10-07').checkIn.stampId).toBe('gold-ingot:1:happy');
+  });
+});
+
+describe('读档时清理已下架角色', () => {
+  const old = (progress: { characterId: string }[], active: string) => ({
+    version: 1 as const, profile: { nickname: '', avatarId: active }, activeCharacterId: active, checkIns: [],
+    progress: progress.map((p) => ({ ...p, xp: 0, stage: 1, maxed: false, graduated: false })),
+  });
+  it('旧角色全部下架:回到初始状态重新选角', () => {
+    const s = createAppStore(createMemoryRepo(old([{ characterId: 'gold2' }], 'gold2'))).getState();
+    expect(s.profile).toBeNull();
+    expect(s.progress).toHaveLength(0);
+  });
+  it('当前角色下架但还有别的:切到剩下的那只,头像一并修正', () => {
+    const s = createAppStore(createMemoryRepo(old([{ characterId: 'gold2' }, { characterId: 'wood-bamboo' }], 'gold2'))).getState();
+    expect(s.activeCharacterId).toBe('wood-bamboo');
+    expect(s.profile?.avatarId).toBe('wood-bamboo');
+    expect(s.progress.map((p) => p.characterId)).toEqual(['wood-bamboo']);
   });
 });

@@ -99,7 +99,8 @@ export function Calendar({ selected, onSelect }: { selected: string; onSelect: (
         {weeks.flat().map((d) => {
           const list = byDate.get(d) ?? [];
           const first = list.find((c) => c.counted) ?? list[0];
-          const [cid, stage, mk] = first ? first.stampId.split(':') : [];
+          const [cid, stage] = first ? first.stampId.split(':') : [];
+          const mk = list.length ? list[list.length - 1].stampId.split(':')[2] : undefined; // 心情以当天最新一次为准
           const picked = multi && sel.has(d);
           return (
             <button key={d} data-date={d} disabled={d > today} aria-label={`${d},${list.length} 次记录`} aria-pressed={multi ? picked : d === selected}
@@ -108,7 +109,7 @@ export function Calendar({ selected, onSelect }: { selected: string; onSelect: (
                 ${picked ? 'bg-gold/50' : view === 'month' && !inMonth(d, anchor) ? 'bg-tile' : 'bg-porcelain'}
                 ${!multi && d === selected ? 'outline-2 outline-gold -outline-offset-2' : ''}`}>
               <span className={d === today ? 'rounded-full bg-gold px-1.5 font-semibold' : ''}>{+d.slice(8)}</span>
-              {first && <Poo characterId={cid} stage={+stage} mood={(mk as Mood) ?? 'happy'} size={view === 'week' ? 44 : 30} />}
+              {first && <Poo characterId={cid} stage={+stage} mood={(mk as Mood) ?? 'happy'} size={view === 'week' ? 44 : 30} scene={false} />}
               {list.length > 1 && <span className="absolute right-0.5 top-0.5 text-[10px]">×{list.length}</span>}
             </button>
           );

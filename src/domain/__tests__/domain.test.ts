@@ -33,19 +33,19 @@ describe('evolution', () => {
     expect(stageForXp(1500)).toBe(5);
   });
   it('进化与满级后继续累积', () => {
-    const r = applyXp({ ...newProgress('gold'), xp: 95 }, 10);
+    const r = applyXp({ ...newProgress('gold-ingot'), xp: 95 }, 10);
     expect(r.evolved).toBe(true);
-    const maxed = applyXp({ ...newProgress('gold'), xp: 1490, stage: 4 }, 20);
+    const maxed = applyXp({ ...newProgress('gold-ingot'), xp: 1490, stage: 4 }, 20);
     expect(maxed.reachedMax).toBe(true);
     expect(applyXp(maxed.progress, 20).progress.xp).toBe(1530);
   });
   it('未满级不能毕业', () => {
-    expect(() => graduate(newProgress('gold'))).toThrow();
+    expect(() => graduate(newProgress('gold-ingot'))).toThrow();
   });
 });
 
 describe('recordCheckIn', () => {
-  const base = { progress: newProgress('gold'), stampId: 's1', now: new Date() };
+  const base = { progress: newProgress('gold-ingot'), stampId: 's1', now: new Date() };
   it('同一天第二次只记录不计经验', () => {
     const first = recordCheckIn({ ...base, existing: [], date: '2026-10-08', id: 'a' });
     expect(first.checkIn.counted).toBe(true);

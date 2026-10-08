@@ -14,7 +14,7 @@ const TABS: [Tab, string, string][] = [
   ['home', '首页', 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10'],
   ['review', '回顾', 'M4 20V10M10 20V4M16 20v-7M22 20H2'],
   ['collection', '图鉴', 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'],
-  ['me', '我的', 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0'],
+  ['me', '个人', 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0'],
 ];
 
 export default function App() {
@@ -39,7 +39,7 @@ export default function App() {
         )}
         {tab === 'review' && <Review />}
         {tab === 'collection' && <Collection />}
-        {tab === 'me' && <ProfilePage />}
+        {tab === 'me' && <ProfilePage onPicked={() => { setSelected(toDateKey(new Date())); setTab('home'); }} />}
       </main>
       <nav className="fixed inset-x-0 bottom-0 border-t border-grout bg-porcelain pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto grid max-w-md grid-cols-4">

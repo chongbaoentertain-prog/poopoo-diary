@@ -6,7 +6,7 @@ import { activeProgress } from '../../store/selectors';
 import { useAppStore } from '../../store/useAppStore';
 
 /** 满级后:继续养这一只(什么都不用做),或毕业并换新角色 */
-export function GraduatePanel() {
+export function GraduatePanel({ onPicked }: { onPicked?: () => void }) {
   const progress = useAppStore(activeProgress);
   const owned = useAppStore((s) => s.progress);
   const graduateAndPick = useAppStore((s) => s.graduateAndPick);
@@ -25,10 +25,15 @@ export function GraduatePanel() {
       <p>「{now}」已达到最高形态!可以继续养它累积经验,或让它毕业进图鉴,再选一只新的。</p>
       {available.length === 0 ? <p>所有角色都已拥有啦。</p> : picking ? (
         <>
-          <CharacterPicker options={available} onPick={(c) => {
+          <div>
+            <div className="font-semibold">迎接新的伙伴</div>
+            <div>上一只已经圆满毕业,图鉴里永远有它的位置。</div>
+          </div>
+          <CharacterPicker confirm options={available} onPick={(c) => {
             if (!window.confirm(`让「${now}」毕业进图鉴,换成「${c.name}」从头养成?`)) return;
             graduateAndPick(c.id);
             setPicking(false);
+            onPicked?.();
           }} />
           <div className="flex justify-center"><button onClick={() => setPicking(false)} className="rounded-lg bg-porcelain px-4 py-1">取消</button></div>
         </>

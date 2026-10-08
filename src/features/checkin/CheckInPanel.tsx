@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Poo } from '../../components/art/Poo';
-import { charDef, randomMood, type Mood } from '../../data/characters';
+import { charDef, MOODS, type Mood } from '../../data/characters';
 import { toDateKey } from '../../domain/date';
 import { progressToNext } from '../../domain/evolution';
 import { MAX_STAGE, STAGE_THRESHOLDS } from '../../domain/rules';
@@ -14,7 +14,7 @@ export function CheckInPanel({ date }: { date: string }) {
   const [msg, setMsg] = useState('');
   const [stamp, setStamp] = useState<{ n: number; cid: string; stage: number; mood: Mood } | null>(null);
   const [evolveN, setEvolveN] = useState(0);
-  const [mood, setMood] = useState<Mood>(() => randomMood(progress?.characterId ?? ''));
+  const [mood, setMood] = useState<Mood>('happy');
   if (!progress) return null;
 
   const def = charDef(progress.characterId);
@@ -23,10 +23,9 @@ export function CheckInPanel({ date }: { date: string }) {
   const next = progress.stage < MAX_STAGE ? STAGE_THRESHOLDS[progress.stage] : null;
 
   const onClick = () => {
-    const r = checkIn(date);
+    const r = checkIn(date, mood);
     const c = r.checkIn;
     const [cid, stage, mk] = c.stampId.split(':');
-    setMood(mk as Mood);
     setStamp({ n: Date.now(), cid, stage: +stage, mood: mk as Mood });
     if (r.evolved) setEvolveN((n) => n + 1);
     setMsg(!c.counted ? '已记录(这天的经验已领取)'
@@ -49,9 +48,21 @@ export function CheckInPanel({ date }: { date: string }) {
           </button>
         </div>
       </div>
+      <div className="space-y-1">
+        <div className="text-xs">{date === today ? '今天' : '这天'}的心情(图鉴会显示最近一次签到的心情)</div>
+        <div className="grid grid-cols-7 gap-1" role="group" aria-label="心情">
+          {MOODS.map((m) => (
+            <button key={m.id} aria-pressed={mood === m.id} onClick={() => setMood(m.id)}
+              className={`rounded-lg border-2 bg-tile py-0.5 text-center ${mood === m.id ? 'border-gold' : 'border-transparent'}`}>
+              <div className="flex justify-center"><Poo characterId={progress.characterId} stage={progress.stage} size={34} mood={m.id} scene={false} /></div>
+              <div className="text-[10px] leading-tight">{m.label}</div>
+            </button>
+          ))}
+        </div>
+      </div>
       {msg && (
         <div role="status" className="flex items-center gap-2 text-sm">
-          {stamp && <div key={stamp.n} className="animate-stamp"><Poo characterId={stamp.cid} stage={stamp.stage} size={36} mood={stamp.mood} /></div>}
+          {stamp && <div key={stamp.n} className="animate-stamp"><Poo characterId={stamp.cid} stage={stamp.stage} size={36} mood={stamp.mood} scene={false} /></div>}
           <span>{msg}</span>
         </div>
       )}
