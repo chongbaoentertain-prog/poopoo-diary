@@ -1,0 +1,18 @@
+@import "tailwindcss";
+/* 暖色统一主题:沙色底、奶白卡片、焦糖棕按钮、金色点缀 */
+@theme {
+  --color-tile: #f6e9d6;
+  --color-porcelain: #fffaf1;
+  --color-grout: #e2cfae;
+  --color-ink: #3a2a22;
+  --color-brown: #b4572a;
+  --color-gold: #e8a62a;
+  --font-sans: "Fredoka", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+}
+body { @apply bg-tile text-ink font-sans; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+@keyframes stamp { 0% { transform: scale(2.2) rotate(-14deg); opacity: 0; } 60% { transform: scale(.9) rotate(4deg); opacity: 1; } 100% { transform: scale(1) rotate(-6deg); } }
+@keyframes evolve { 0% { transform: scale(1); filter: brightness(1); } 40% { transform: scale(1.25); filter: brightness(2.2); } 100% { transform: scale(1); filter: brightness(1); } }
+.animate-stamp { animation: stamp .4s ease-out both; }
+.animate-evolve { animation: evolve .9s ease-in-out; }
