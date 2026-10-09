@@ -1,33 +1,36 @@
-import type { CheckIn } from '../types/diary';
-import type { AppState } from '../services/storage/AppStateRepository';
+import type { Mood } from '../types/character';
+import { compareByTime } from '../domain/compareCheckIns';
+import { addDays } from '../domain/date';
+import { parseStampId } from '../domain/stamp';
+import type { AppState, CharacterId, CheckIn, DateKey } from '../types/diary';
 
-/** 日历用:date -> 当天所有记录(按时间排序) */
-export function groupByDate(checkIns: readonly CheckIn[]): Map<string, CheckIn[]> {
-  const map = new Map<string, CheckIn[]>();
-  for (const c of [...checkIns].sort((a, b) => a.at.localeCompare(b.at))) {
-    map.set(c.date, [...(map.get(c.date) ?? []), c]);
+/** 日历用:日期 -> 当天所有记录(按时间排序) */
+export function groupCheckInsByDate(checkIns: readonly CheckIn[]): Map<DateKey, CheckIn[]> {
+  const checkInsByDate = new Map<DateKey, CheckIn[]>();
+  for (const checkIn of [...checkIns].sort(compareByTime)) {
+    checkInsByDate.set(checkIn.date, [...(checkInsByDate.get(checkIn.date) ?? []), checkIn]);
   }
-  return map;
+  return checkInsByDate;
 }
 
-export const activeProgress = (s: AppState) =>
-  s.progress.find((p) => p.characterId === s.activeCharacterId) ?? null;
+export const selectActiveProgress = (state: AppState) =>
+  state.progress.find((entry) => entry.characterId === state.activeCharacterId) ?? null;
 
-/** 图鉴:已毕业的角色 */
-export const collected = (s: AppState) => s.progress.filter((p) => p.graduated);
+/** 图鉴用:每只角色最近一次签到时选的心情 */
+export function getLastMoodByCharacterId(checkIns: readonly CheckIn[]): Map<CharacterId, Mood> {
+  const lastMoodByCharacterId = new Map<CharacterId, Mood>();
+  for (const checkIn of [...checkIns].sort(compareByTime)) {
+    lastMoodByCharacterId.set(checkIn.characterId, parseStampId(checkIn.stampId).mood);
+  }
+  return lastMoodByCharacterId;
+}
 
 /** 当前连续天数(截至 today;今天还没打卡则从昨天算起) */
-export function currentStreak(checkIns: readonly CheckIn[], today: string): number {
-  const days = new Set(checkIns.filter((c) => c.counted).map((c) => c.date));
-  const latest = days.has(today) ? today : null;
-  const last = latest ?? [...days].sort().pop();
-  if (!last) return 0;
-  const c = checkIns.find((x) => x.counted && x.date === last);
-  const isRecent = last === today || addDay(last) === today;
-  return isRecent && c ? c.streak : 0;
-}
-
-function addDay(d: string) {
-  const [y, m, day] = d.split('-').map(Number);
-  return new Date(Date.UTC(y, m - 1, day + 1)).toISOString().slice(0, 10);
+export function getCurrentStreak(checkIns: readonly CheckIn[], today: DateKey): number {
+  const countedDates = new Set(checkIns.filter((checkIn) => checkIn.counted).map((checkIn) => checkIn.date));
+  const lastCountedDate = countedDates.has(today) ? today : [...countedDates].sort().pop();
+  if (!lastCountedDate) return 0;
+  const lastCheckIn = checkIns.find((checkIn) => checkIn.counted && checkIn.date === lastCountedDate);
+  const isStillOngoing = lastCountedDate === today || addDays(lastCountedDate, 1) === today;
+  return isStillOngoing && lastCheckIn ? lastCheckIn.streak : 0;
 }

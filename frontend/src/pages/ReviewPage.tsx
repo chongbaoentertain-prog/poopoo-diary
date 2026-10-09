@@ -1,44 +1,60 @@
 import { useState } from 'react';
+import { getMonthGrid, isInSameMonth } from '../domain/calendarGrid';
 import { addDays } from '../domain/date';
 import { useAppStore } from '../hooks/useAppStore';
-import { inMonth, monthGrid } from '../domain/calendarGrid';
 
-export function Review() {
-  const checkIns = useAppStore((s) => s.checkIns);
+export function ReviewPage() {
+  const checkIns = useAppStore((state) => state.checkIns);
   const thisYear = new Date().getFullYear();
-  const minYear = Math.min(thisYear, ...checkIns.map((c) => +c.date.slice(0, 4)));
-  const [year, setYear] = useState(thisYear);
+  const earliestYear = Math.min(thisYear, ...checkIns.map((checkIn) => Number(checkIn.date.slice(0, 4))));
+  const [selectedYear, setSelectedYear] = useState(thisYear);
 
-  const inYear = checkIns.filter((c) => c.date.startsWith(`${year}-`));
-  const days = [...new Set(inYear.filter((c) => c.counted).map((c) => c.date))].sort();
-  let longest = 0, run = 0;
-  days.forEach((d, i) => { run = i > 0 && addDays(days[i - 1], 1) === d ? run + 1 : 1; longest = Math.max(longest, run); });
-  const xp = inYear.filter((c) => c.counted).reduce((s, c) => s + c.xpGained, 0);
-  const perDay = new Map<string, number>();
-  inYear.forEach((c) => perDay.set(c.date, (perDay.get(c.date) ?? 0) + 1));
-  const stats: [string, number][] = [['签到天数', days.length], ['最长连续', longest], ['获得经验', xp], ['记录次数', inYear.length]];
+  const checkInsInYear = checkIns.filter((checkIn) => checkIn.date.startsWith(`${selectedYear}-`));
+  const countedCheckInsInYear = checkInsInYear.filter((checkIn) => checkIn.counted);
+  const checkedInDates = [...new Set(countedCheckInsInYear.map((checkIn) => checkIn.date))].sort();
+
+  let longestStreak = 0;
+  let currentStreak = 0;
+  checkedInDates.forEach((date, index) => {
+    const continuesPreviousDay = index > 0 && addDays(checkedInDates[index - 1], 1) === date;
+    currentStreak = continuesPreviousDay ? currentStreak + 1 : 1;
+    longestStreak = Math.max(longestStreak, currentStreak);
+  });
+
+  const totalXp = countedCheckInsInYear.reduce((sum, checkIn) => sum + checkIn.xpGained, 0);
+  const checkInCountByDate = new Map<string, number>();
+  checkInsInYear.forEach((checkIn) => checkInCountByDate.set(checkIn.date, (checkInCountByDate.get(checkIn.date) ?? 0) + 1));
+  const summaryStats: [label: string, value: number][] = [
+    ['签到天数', checkedInDates.length],
+    ['最长连续', longestStreak],
+    ['获得经验', totalXp],
+    ['记录次数', checkInsInYear.length],
+  ];
 
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-2">
-        <button aria-label="上一年" disabled={year <= minYear} onClick={() => setYear(year - 1)} className="rounded-lg bg-porcelain px-3 py-1 disabled:opacity-40">‹</button>
-        <h2 className="flex-1 text-center font-semibold">{year} 年回顾</h2>
-        <button aria-label="下一年" disabled={year >= thisYear} onClick={() => setYear(year + 1)} className="rounded-lg bg-porcelain px-3 py-1 disabled:opacity-40">›</button>
+        <button aria-label="上一年" disabled={selectedYear <= earliestYear} onClick={() => setSelectedYear(selectedYear - 1)} className="rounded-lg bg-porcelain px-3 py-1 disabled:opacity-40">‹</button>
+        <h2 className="flex-1 text-center font-semibold">{selectedYear} 年回顾</h2>
+        <button aria-label="下一年" disabled={selectedYear >= thisYear} onClick={() => setSelectedYear(selectedYear + 1)} className="rounded-lg bg-porcelain px-3 py-1 disabled:opacity-40">›</button>
       </div>
       <div className="grid grid-cols-4 gap-2 text-center">
-        {stats.map(([k, v]) => <div key={k} className="rounded-xl bg-porcelain p-2"><div className="text-lg font-semibold">{v}</div><div className="text-[11px]">{k}</div></div>)}
+        {summaryStats.map(([label, value]) => (
+          <div key={label} className="rounded-xl bg-porcelain p-2"><div className="text-lg font-semibold">{value}</div><div className="text-[11px]">{label}</div></div>
+        ))}
       </div>
       <div className="grid grid-cols-3 gap-3">
-        {Array.from({ length: 12 }, (_, i) => {
-          const first = `${year}-${String(i + 1).padStart(2, '0')}-01`;
-          const n = days.filter((d) => d.startsWith(first.slice(0, 7))).length;
+        {Array.from({ length: 12 }, (_, monthIndex) => {
+          const firstDayOfMonth = `${selectedYear}-${String(monthIndex + 1).padStart(2, '0')}-01`;
+          const checkedInDayCount = checkedInDates.filter((date) => date.startsWith(firstDayOfMonth.slice(0, 7))).length;
           return (
-            <div key={first} className="space-y-1 rounded-xl bg-porcelain p-2">
-              <div className="flex justify-between text-xs"><span>{i + 1}月</span><span>{n} 天</span></div>
+            <div key={firstDayOfMonth} className="space-y-1 rounded-xl bg-porcelain p-2">
+              <div className="flex justify-between text-xs"><span>{monthIndex + 1}月</span><span>{checkedInDayCount} 天</span></div>
               <div className="grid grid-cols-7 gap-0.5">
-                {monthGrid(first).flat().map((d) => {
-                  const c = perDay.get(d) ?? 0;
-                  return <div key={d} title={`${d}:${c} 次`} className={`aspect-square rounded-sm ${!inMonth(d, first) ? 'invisible' : c === 0 ? 'bg-grout/60' : c === 1 ? 'bg-gold' : 'bg-brown'}`} />;
+                {getMonthGrid(firstDayOfMonth).flat().map((date) => {
+                  const recordCount = checkInCountByDate.get(date) ?? 0;
+                  const cellColor = !isInSameMonth(date, firstDayOfMonth) ? 'invisible' : recordCount === 0 ? 'bg-grout/60' : recordCount === 1 ? 'bg-gold' : 'bg-brown';
+                  return <div key={date} title={`${date}:${recordCount} 次`} className={`aspect-square rounded-sm ${cellColor}`} />;
                 })}
               </div>
             </div>

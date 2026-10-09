@@ -1,151 +1,175 @@
 import { createStore } from 'zustand/vanilla';
-import { recordCheckIn, type CheckInResult } from '../domain/recordCheckIn';
-import { recomputeAll } from '../domain/recomputeFromCheckIns';
-import { applyRemote } from '../services/sync/mergeRemoteSnapshot';
-import type { RemoteSnapshot } from '../services/sync/syncTypes';
-import { normalizeState } from './normalizeAppState';
+import { CHARACTERS } from '../data/characters';
+import { DEFAULT_MOOD } from '../data/moods';
 import { toDateKey } from '../domain/date';
-import { graduate, newProgress } from '../domain/evolution';
-import type { CharacterProgress, Profile } from '../types/diary';
-import { CHARACTERS, type Mood } from '../data/characters';
-import { EMPTY_STATE, type AppState, type Repository } from '../services/storage/AppStateRepository';
+import { createInitialProgress, graduate } from '../domain/evolution';
+import { mergeRemoteSnapshot } from '../domain/mergeRemoteSnapshot';
+import { normalizeAppState } from '../domain/normalizeAppState';
+import { recomputeFromCheckIns } from '../domain/recomputeFromCheckIns';
+import { recordCheckIn, type CheckInResult } from '../domain/recordCheckIn';
+import { formatStampId } from '../domain/stamp';
+import type { AppStateRepository } from '../services/storage/AppStateRepository';
+import type { Mood } from '../types/character';
+import type { AppState, CharacterId, CharacterProgress, DateKey, Profile } from '../types/diary';
+import type { RemoteSnapshot } from '../types/sync';
 
-export interface AppActions {
-  completeOnboarding(profile: Profile, characterId: string): void;
-  updateProfile(patch: Partial<Profile>): void;
-  /** 打卡。date 默认今天,mood 为用户选的心情(默认开心);返回结果供 UI 播放印章/进化动画 */
-  checkIn(date?: string, mood?: Mood): CheckInResult;
-  /** 当前角色已满级时:毕业入图鉴并选择新角色(只能选图鉴里还没有的) */
-  graduateAndPick(newCharacterId: string): void;
-  /** 批量打卡:跳过已打卡的日子,按日期顺序处理,最后统一重算 */
-  checkInMany(dates: string[]): BatchResult;
-  /** 并入云端数据(同步层调用) */
-  mergeRemote(remote: RemoteSnapshot, wipe: boolean): void;
-  resetAll(): void;
+export interface BulkCheckInResult {
+  addedDayCount: number;
+  xpGained: number;
+  evolved: boolean;
+  reachedMax: boolean;
 }
 
-export interface BatchResult { added: number; xpGained: number; evolved: boolean; reachedMax: boolean }
+export interface AppActions {
+  completeOnboarding(profile: Profile, characterId: CharacterId): void;
+  updateProfile(profileChanges: Partial<Profile>): void;
+  /** 打卡。date 默认今天,mood 为用户选的心情;返回结果供 UI 播放印章/进化动画 */
+  checkIn(date?: DateKey, mood?: Mood): CheckInResult;
+  /** 当前角色已满级时:毕业入图鉴并选择新角色(只能选图鉴里还没有的) */
+  graduateAndChooseCharacter(newCharacterId: CharacterId): void;
+  /** 批量打卡:跳过已打卡的日子,按日期顺序处理,最后统一重算 */
+  checkInOnDates(dates: DateKey[]): BulkCheckInResult;
+  /** 并入云端数据(同步层调用) */
+  applyRemoteSnapshot(remote: RemoteSnapshot, shouldWipeLocal: boolean): void;
+  resetAllData(): void;
+}
+
 export type AppStore = AppState & AppActions;
 
-const newId = () =>
-  globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+const generateId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-// stamp 样式跟随角色 + 形态,对应 components/art 里的 SVG
-export const stampIdFor = (p: CharacterProgress, mood: Mood = 'happy') => `${p.characterId}:${p.stage}:${mood}`;
+/** 印章用打卡"前"的形态:这一次签到让它进化了,印章上仍是进化前的样子 */
+const buildStampId = (progress: CharacterProgress, mood: Mood = DEFAULT_MOOD) =>
+  formatStampId({ characterId: progress.characterId, stage: progress.stage, mood });
 
-export function createAppStore(repo: Repository) {
-  const persist = (s: AppState) =>
-    repo.save({
+export function createAppStore(repository: AppStateRepository) {
+  const saveToRepository = (state: AppState) =>
+    repository.save({
       version: 1,
-      profile: s.profile,
-      activeCharacterId: s.activeCharacterId,
-      checkIns: s.checkIns,
-      progress: s.progress,
-      profileUpdatedAt: s.profileUpdatedAt,
+      profile: state.profile,
+      activeCharacterId: state.activeCharacterId,
+      checkIns: state.checkIns,
+      progress: state.progress,
+      profileUpdatedAt: state.profileUpdatedAt,
     });
 
   return createStore<AppStore>()((set, get) => ({
-    ...normalizeState(repo.load()),
+    ...normalizeAppState(repository.load()),
 
     completeOnboarding(profile, characterId) {
-      if (!CHARACTERS.some((c) => c.id === characterId)) throw new Error('未知角色');
+      if (!CHARACTERS.some((character) => character.id === characterId)) throw new Error('未知角色');
       set({
         profile,
         activeCharacterId: characterId,
-        progress: [newProgress(characterId)],
+        progress: [createInitialProgress(characterId)],
         profileUpdatedAt: Date.now(),
       });
-      persist(get());
+      saveToRepository(get());
     },
 
-    updateProfile(patch) {
+    updateProfile(profileChanges) {
       const { profile } = get();
       if (!profile) throw new Error('请先完成初始设置');
-      set({ profile: { ...profile, ...patch }, profileUpdatedAt: Date.now() });
-      persist(get());
+      set({ profile: { ...profile, ...profileChanges }, profileUpdatedAt: Date.now() });
+      saveToRepository(get());
     },
 
     checkIn(date = toDateKey(new Date()), mood) {
       const { activeCharacterId, progress, checkIns } = get();
-      const current = progress.find((p) => p.characterId === activeCharacterId);
-      if (!current) throw new Error('请先选择角色');
+      const activeProgress = progress.find((entry) => entry.characterId === activeCharacterId);
+      if (!activeProgress) throw new Error('请先选择角色');
 
       const result = recordCheckIn({
-        existing: checkIns,
-        progress: current,
+        existingCheckIns: checkIns,
+        progress: activeProgress,
         date,
-        now: new Date(),
-        stampId: stampIdFor(current, mood), // 用打卡"前"的形态盖章
-        id: newId(),
+        recordedAt: new Date(),
+        stampId: buildStampId(activeProgress, mood),
+        checkInId: generateId(),
       });
 
-      const rebuilt = recomputeAll([...checkIns, result.checkIn], progress);
-      const after = rebuilt.progress.find((p) => p.characterId === current.characterId)!;
-      set({ checkIns: rebuilt.checkIns, progress: rebuilt.progress });
-      persist(get());
+      const recomputed = recomputeFromCheckIns([...checkIns, result.checkIn], progress);
+      const progressAfter = recomputed.progress.find((entry) => entry.characterId === activeProgress.characterId)!;
+      set({ checkIns: recomputed.checkIns, progress: recomputed.progress });
+      saveToRepository(get());
       return {
         ...result,
-        checkIn: rebuilt.checkIns.find((c) => c.id === result.checkIn.id)!,
-        progress: after,
-        evolved: after.stage > current.stage,
-        reachedMax: after.maxed && !current.maxed,
+        checkIn: recomputed.checkIns.find((checkIn) => checkIn.id === result.checkIn.id)!,
+        progress: progressAfter,
+        evolved: progressAfter.stage > activeProgress.stage,
+        reachedMax: progressAfter.maxed && !activeProgress.maxed,
       };
     },
 
-    graduateAndPick(newCharacterId) {
+    graduateAndChooseCharacter(newCharacterId) {
       const { activeCharacterId, progress } = get();
-      const current = progress.find((p) => p.characterId === activeCharacterId);
-      if (!current) throw new Error('请先选择角色');
-      if (!CHARACTERS.some((c) => c.id === newCharacterId)) throw new Error('未知角色');
-      if (progress.some((p) => p.characterId === newCharacterId)) {
-        throw new Error('该角色已在图鉴中');
-      }
-      const graduated = graduate(current); // 未满级会抛错
+      const activeProgress = progress.find((entry) => entry.characterId === activeCharacterId);
+      if (!activeProgress) throw new Error('请先选择角色');
+      if (!CHARACTERS.some((character) => character.id === newCharacterId)) throw new Error('未知角色');
+      if (progress.some((entry) => entry.characterId === newCharacterId)) throw new Error('该角色已在图鉴中');
+
+      const graduatedProgress = graduate(activeProgress); // 未满级会抛错
       set({
         progress: [
-          ...progress.map((p) => (p.characterId === current.characterId ? graduated : p)),
-          newProgress(newCharacterId),
+          ...progress.map((entry) => (entry.characterId === activeProgress.characterId ? graduatedProgress : entry)),
+          createInitialProgress(newCharacterId),
         ],
         activeCharacterId: newCharacterId,
         profileUpdatedAt: Date.now(), // 当前培育的角色属于资料的一部分
       });
-      persist(get());
+      saveToRepository(get());
     },
 
-    checkInMany(dates) {
+    checkInOnDates(dates) {
       const { activeCharacterId, progress, checkIns } = get();
-      const current = progress.find((p) => p.characterId === activeCharacterId);
-      if (!current) throw new Error('请先选择角色');
+      const activeProgress = progress.find((entry) => entry.characterId === activeCharacterId);
+      if (!activeProgress) throw new Error('请先选择角色');
+
       const today = toDateKey(new Date());
-      const have = new Set(checkIns.filter((c) => c.counted).map((c) => c.date));
-      const todo = [...new Set(dates)].filter((d) => d <= today && !have.has(d)).sort();
-      let all = [...checkIns];
-      let cur = current;
-      for (const date of todo) {
-        const r = recordCheckIn({ existing: all, progress: cur, date, now: new Date(), stampId: stampIdFor(cur), id: newId() });
-        all = [...all, r.checkIn];
-        cur = r.progress;
+      const datesAlreadyCounted = new Set(checkIns.filter((checkIn) => checkIn.counted).map((checkIn) => checkIn.date));
+      const datesToCheckIn = [...new Set(dates)].filter((date) => date <= today && !datesAlreadyCounted.has(date)).sort();
+
+      let allCheckIns = [...checkIns];
+      let progressSoFar = activeProgress;
+      for (const date of datesToCheckIn) {
+        const result = recordCheckIn({
+          existingCheckIns: allCheckIns,
+          progress: progressSoFar,
+          date,
+          recordedAt: new Date(),
+          stampId: buildStampId(progressSoFar),
+          checkInId: generateId(),
+        });
+        allCheckIns = [...allCheckIns, result.checkIn];
+        progressSoFar = result.progress;
       }
-      const rebuilt = recomputeAll(all, progress);
-      const after = rebuilt.progress.find((p) => p.characterId === current.characterId)!;
-      set({ checkIns: rebuilt.checkIns, progress: rebuilt.progress });
-      persist(get());
-      return { added: todo.length, xpGained: after.xp - current.xp, evolved: after.stage > current.stage, reachedMax: after.maxed && !current.maxed };
+
+      const recomputed = recomputeFromCheckIns(allCheckIns, progress);
+      const progressAfter = recomputed.progress.find((entry) => entry.characterId === activeProgress.characterId)!;
+      set({ checkIns: recomputed.checkIns, progress: recomputed.progress });
+      saveToRepository(get());
+      return {
+        addedDayCount: datesToCheckIn.length,
+        xpGained: progressAfter.xp - activeProgress.xp,
+        evolved: progressAfter.stage > activeProgress.stage,
+        reachedMax: progressAfter.maxed && !activeProgress.maxed,
+      };
     },
 
-    mergeRemote(remote, wipe) {
-      const cur = get();
-      const next = applyRemote(cur, remote, wipe);
+    applyRemoteSnapshot(remote, shouldWipeLocal) {
+      const currentState = get();
+      const mergedState = mergeRemoteSnapshot(currentState, remote, shouldWipeLocal);
       // 没有实际变化就不 set:否则每轮同步都会触发订阅者,进而再触发一轮同步
-      const view = (x: AppState) => JSON.stringify([x.profile, x.activeCharacterId, x.profileUpdatedAt, x.checkIns, x.progress]);
-      if (view(next) === view(cur)) return;
-      set(next);
-      persist(get());
+      const comparableContent = (state: AppState) =>
+        JSON.stringify([state.profile, state.activeCharacterId, state.profileUpdatedAt, state.checkIns, state.progress]);
+      if (comparableContent(mergedState) === comparableContent(currentState)) return;
+      set(mergedState);
+      saveToRepository(get());
     },
 
-    resetAll() {
-      repo.clear();
-      set({ ...repo.load(), profileUpdatedAt: undefined });
+    resetAllData() {
+      repository.clear();
+      set({ ...repository.load(), profileUpdatedAt: undefined });
     },
   }));
 }

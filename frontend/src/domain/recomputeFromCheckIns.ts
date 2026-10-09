@@ -1,33 +1,51 @@
+import type { CharacterProgress, CheckIn } from '../types/diary';
+import { compareByDate } from './compareCheckIns';
 import { addDays } from './date';
 import { stageForXp } from './evolution';
 import { MAX_STAGE } from './rules';
-import type { CharacterProgress, CheckIn } from '../types/diary';
 import { multiplierForStreak, xpForStreak } from './xp';
+
+interface DerivedCheckInValues {
+  streak: number;
+  multiplier: number;
+  xpGained: number;
+}
 
 /**
  * 按"全部打卡记录"重算连续天数 / 倍率 / 经验 / 形态。
  * 补卡、乱序补卡、跨月都靠它保证结果与打卡顺序无关。
  */
-export function recomputeAll(checkIns: readonly CheckIn[], progress: readonly CharacterProgress[]) {
-  const counted = checkIns.filter((c) => c.counted).sort((a, b) => a.date.localeCompare(b.date));
-  const byId = new Map<string, { streak: number; multiplier: number; xp: number }>();
-  let prev = '';
+export function recomputeFromCheckIns(checkIns: readonly CheckIn[], progressList: readonly CharacterProgress[]) {
+  const countedCheckIns = checkIns.filter((checkIn) => checkIn.counted).sort(compareByDate);
+
+  const derivedValuesByCheckInId = new Map<string, DerivedCheckInValues>();
+  let previousDate = '';
   let streak = 0;
-  for (const c of counted) {
-    if (c.date !== prev) streak = prev && addDays(c.date, -1) === prev ? streak + 1 : 1;
-    prev = c.date;
-    byId.set(c.id, { streak, multiplier: multiplierForStreak(streak), xp: xpForStreak(streak) });
+  for (const checkIn of countedCheckIns) {
+    if (checkIn.date !== previousDate) {
+      const continuesPreviousDay = previousDate !== '' && addDays(checkIn.date, -1) === previousDate;
+      streak = continuesPreviousDay ? streak + 1 : 1;
+    }
+    previousDate = checkIn.date;
+    derivedValuesByCheckInId.set(checkIn.id, { streak, multiplier: multiplierForStreak(streak), xpGained: xpForStreak(streak) });
   }
-  const next = checkIns.map((c) => {
-    const r = byId.get(c.id);
-    return r ? { ...c, streak: r.streak, multiplier: r.multiplier, xpGained: r.xp } : c;
+
+  const recomputedCheckIns = checkIns.map((checkIn) => {
+    const derived = derivedValuesByCheckInId.get(checkIn.id);
+    return derived ? { ...checkIn, ...derived } : checkIn;
   });
-  const xpBy = new Map<string, number>();
-  for (const c of next) if (c.counted) xpBy.set(c.characterId, (xpBy.get(c.characterId) ?? 0) + c.xpGained);
-  const prog = progress.map((p) => {
-    const xp = xpBy.get(p.characterId) ?? 0;
+
+  const totalXpByCharacterId = new Map<string, number>();
+  for (const checkIn of recomputedCheckIns) {
+    if (!checkIn.counted) continue;
+    totalXpByCharacterId.set(checkIn.characterId, (totalXpByCharacterId.get(checkIn.characterId) ?? 0) + checkIn.xpGained);
+  }
+
+  const recomputedProgress = progressList.map((progress) => {
+    const xp = totalXpByCharacterId.get(progress.characterId) ?? 0;
     const stage = stageForXp(xp);
-    return { ...p, xp, stage, maxed: stage >= MAX_STAGE };
+    return { ...progress, xp, stage, maxed: stage >= MAX_STAGE };
   });
-  return { checkIns: next, progress: prog };
+
+  return { checkIns: recomputedCheckIns, progress: recomputedProgress };
 }

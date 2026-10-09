@@ -1,40 +1,42 @@
-import { EMPTY_STATE, type AppState, type Repository } from './AppStateRepository';
+import type { AppState } from '../../types/diary';
+import { EMPTY_APP_STATE } from '../../domain/emptyAppState';
+import type { AppStateRepository } from './AppStateRepository';
 
-const KEY = 'poopoo-diary:v1';
+const STORAGE_KEY = 'poopoo-diary:v1';
 
-function isValid(x: unknown): x is AppState {
-  const s = x as AppState;
+function isSavedAppState(value: unknown): value is AppState {
+  const candidate = value as AppState;
   return (
-    !!s &&
-    s.version === 1 &&
-    Array.isArray(s.checkIns) &&
-    Array.isArray(s.progress) &&
-    'profile' in s &&
-    'activeCharacterId' in s
+    !!candidate &&
+    candidate.version === 1 &&
+    Array.isArray(candidate.checkIns) &&
+    Array.isArray(candidate.progress) &&
+    'profile' in candidate &&
+    'activeCharacterId' in candidate
   );
 }
 
-export const localStorageRepo: Repository = {
+export const localStorageRepository: AppStateRepository = {
   load() {
     try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return { ...EMPTY_STATE };
-      const parsed: unknown = JSON.parse(raw);
-      return isValid(parsed) ? parsed : { ...EMPTY_STATE };
+      const rawText = localStorage.getItem(STORAGE_KEY);
+      if (!rawText) return { ...EMPTY_APP_STATE };
+      const parsed: unknown = JSON.parse(rawText);
+      return isSavedAppState(parsed) ? parsed : { ...EMPTY_APP_STATE };
     } catch {
-      return { ...EMPTY_STATE }; // 数据损坏或被禁用时降级为空状态
+      return { ...EMPTY_APP_STATE }; // 数据损坏或被禁用时降级为空状态
     }
   },
   save(state) {
     try {
-      localStorage.setItem(KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
       /* 配额满/隐私模式:忽略,内存状态仍可用 */
     }
   },
   clear() {
     try {
-      localStorage.removeItem(KEY);
+      localStorage.removeItem(STORAGE_KEY);
     } catch {
       /* ignore */
     }

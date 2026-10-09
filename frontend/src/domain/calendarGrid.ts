@@ -1,17 +1,38 @@
+import type { DateKey } from '../types/diary';
 import { addDays } from './date';
 
-const parse = (k: string) => { const [y, m, d] = k.split('-').map(Number); return { y, m, d }; };
-const key = (y: number, m: number, d: number) => new Date(Date.UTC(y, m - 1, d)).toISOString().slice(0, 10);
-const weekday = (k: string) => (new Date(`${k}T00:00:00Z`).getUTCDay() + 6) % 7; // 周一 = 0
+const parseDateKey = (dateKey: DateKey) => {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return { year, month, day };
+};
 
-export const weekDays = (k: string) => Array.from({ length: 7 }, (_, i) => addDays(addDays(k, -weekday(k)), i));
-export const addMonths = (k: string, n: number) => { const { y, m } = parse(k); return key(y, m + n, 1); };
-export const inMonth = (d: string, anchor: string) => d.slice(0, 7) === anchor.slice(0, 7);
+const toUtcDateKey = (year: number, month: number, day: number): DateKey =>
+  new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10);
 
-export function monthGrid(anchor: string): string[][] {
-  const { y, m } = parse(anchor);
-  const last = key(y, m + 1, 0);
-  const weeks: string[][] = [];
-  for (let c = key(y, m, 1); c <= last; c = addDays(c, 7)) weeks.push(weekDays(c));
+/** 周一 = 0 ... 周日 = 6 */
+const mondayBasedWeekday = (dateKey: DateKey) => (new Date(`${dateKey}T00:00:00Z`).getUTCDay() + 6) % 7;
+
+/** 包含这一天的那一周(周一开头)的 7 个日期 */
+export const getWeekDateKeys = (dateKey: DateKey): DateKey[] => {
+  const monday = addDays(dateKey, -mondayBasedWeekday(dateKey));
+  return Array.from({ length: 7 }, (_, dayOffset) => addDays(monday, dayOffset));
+};
+
+/** 移动到几个月后的 1 号 */
+export const addMonthsToDateKey = (dateKey: DateKey, monthCount: number): DateKey => {
+  const { year, month } = parseDateKey(dateKey);
+  return toUtcDateKey(year, month + monthCount, 1);
+};
+
+export const isInSameMonth = (dateKey: DateKey, anchorDateKey: DateKey) => dateKey.slice(0, 7) === anchorDateKey.slice(0, 7);
+
+/** 某月的日历格子:按周分行,每行 7 天(周一开头),首尾补齐上下月的日期 */
+export function getMonthGrid(anchorDateKey: DateKey): DateKey[][] {
+  const { year, month } = parseDateKey(anchorDateKey);
+  const lastDayOfMonth = toUtcDateKey(year, month + 1, 0);
+  const weeks: DateKey[][] = [];
+  for (let weekStart = toUtcDateKey(year, month, 1); weekStart <= lastDayOfMonth; weekStart = addDays(weekStart, 7)) {
+    weeks.push(getWeekDateKeys(weekStart));
+  }
   return weeks;
 }

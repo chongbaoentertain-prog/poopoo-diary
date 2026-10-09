@@ -1,16 +1,18 @@
-import { Poo } from './poo/Poo';
 import { useAppStore } from '../hooks/useAppStore';
+import { Poo } from './poo/Poo';
 
 /** 头像 = 你拥有的某只噗(当前形态),不再是 emoji */
 export function Avatar({ size = 40 }: { size?: number }) {
-  const avatarId = useAppStore((s) => s.profile?.avatarId);
-  const progress = useAppStore((s) => s.progress);
-  const activeId = useAppStore((s) => s.activeCharacterId);
-  const p = progress.find((x) => x.characterId === avatarId) ?? progress.find((x) => x.characterId === activeId);
-  if (!p) return null;
+  const avatarCharacterId = useAppStore((state) => state.profile?.avatarId);
+  const progressList = useAppStore((state) => state.progress);
+  const activeCharacterId = useAppStore((state) => state.activeCharacterId);
+  const avatarProgress =
+    progressList.find((entry) => entry.characterId === avatarCharacterId) ??
+    progressList.find((entry) => entry.characterId === activeCharacterId);
+  if (!avatarProgress) return null;
   return (
     <div className="grid place-items-center overflow-hidden rounded-full bg-tile" style={{ width: size, height: size }}>
-      <Poo characterId={p.characterId} stage={p.stage} size={size * 0.92} scene={false} />
+      <Poo characterId={avatarProgress.characterId} stage={avatarProgress.stage} size={size * 0.92} showScene={false} />
     </div>
   );
 }

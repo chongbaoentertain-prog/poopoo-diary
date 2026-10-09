@@ -1,15 +1,17 @@
-import { EMPTY_STATE, type AppState, type Repository } from './AppStateRepository';
+import type { AppState } from '../../types/diary';
+import { EMPTY_APP_STATE } from '../../domain/emptyAppState';
+import type { AppStateRepository } from './AppStateRepository';
 
-/** 测试用 */
-export function createMemoryRepo(initial: AppState = EMPTY_STATE): Repository {
-  let state = initial;
+/** 测试用:存档只放在内存里 */
+export function createMemoryRepository(initialState: AppState = EMPTY_APP_STATE): AppStateRepository {
+  let savedState = initialState;
   return {
-    load: () => state,
-    save: (s) => {
-      state = s;
+    load: () => savedState,
+    save: (state) => {
+      savedState = state;
     },
     clear: () => {
-      state = EMPTY_STATE;
+      savedState = EMPTY_APP_STATE;
     },
   };
 }

@@ -1,97 +1,143 @@
-import { charDef, MOODS, type Mood } from '../../data/characters';
+import { getCharacter } from '../../data/characters';
+import { DEFAULT_MOOD, MOODS } from '../../data/moods';
+import { getWeekDateKeys } from '../../domain/calendarGrid';
+import { compareByTime } from '../../domain/compareCheckIns';
 import { addDays } from '../../domain/date';
-import type { CheckIn, Profile } from '../../types/diary';
-import { weekDays } from '../../domain/calendarGrid';
+import { parseStampId, type Stamp } from '../../domain/stamp';
+import type { Mood } from '../../types/character';
+import type { CheckIn, DateKey, Profile } from '../../types/diary';
 
 /** 自定义范围最多 6 周,正好是一张卡片能放下的日历 */
-export const MAX_SHARE_DAYS = 42;
+export const MAX_SHARE_RANGE_DAYS = 42;
 
-export type RangeKind = 'day' | 'week' | 'month' | 'custom';
+export type ShareRangeKind = 'day' | 'week' | 'month' | 'custom';
 
 /** 某一天在卡片上的样子:角色/形态取当天第一次签到,心情取当天最新一次(和日历一致) */
-export interface DayStamp { date: string; characterId: string; stage: number; mood: Mood }
+export interface DayStamp extends Stamp {
+  date: DateKey;
+}
 
-export interface ShareData {
-  from: string;
-  to: string;
-  days: (DayStamp | null)[]; // from..to 每天一格,没签到为 null
-  checkedDays: number;
-  longest: number; // 范围内最长连续天数
-  topMood: { mood: Mood; count: number } | null;
-  headline: DayStamp | null; // 范围内最近一次签到,卡片主角
-  streak: number; // 主角那天的连续天数
+export interface ShareCardData {
+  fromDate: DateKey;
+  toDate: DateKey;
+  dayStamps: (DayStamp | null)[]; // fromDate..toDate 每天一格,没签到为 null
+  checkedInDayCount: number;
+  longestStreak: number; // 范围内最长连续天数
+  mostFrequentMood: { mood: Mood; count: number } | null;
+  headlineStamp: DayStamp | null; // 范围内最近一次签到,卡片主角
+  headlineStreak: number; // 主角那天的连续天数
   quote: string;
   nickname: string;
 }
 
-export function rangeFor(kind: RangeKind, selected: string, today: string, custom: [string, string]): [string, string] {
-  if (kind === 'day') return [selected, selected];
+export interface CalendarCell {
+  date: DateKey;
+  stamp: DayStamp | null;
+}
+
+export function getShareDateRange(
+  kind: ShareRangeKind,
+  selectedDate: DateKey,
+  today: DateKey,
+  customRange: [DateKey, DateKey],
+): [DateKey, DateKey] {
+  if (kind === 'day') return [selectedDate, selectedDate];
   if (kind === 'week') return [addDays(today, -6), today];
   if (kind === 'month') return [`${today.slice(0, 7)}-01`, today];
-  const [a, b] = custom[0] <= custom[1] ? custom : [custom[1], custom[0]];
-  const last = addDays(a, MAX_SHARE_DAYS - 1);
-  return [a, b > last ? last : b];
+  const [startDate, endDate] = customRange[0] <= customRange[1] ? customRange : [customRange[1], customRange[0]];
+  const lastAllowedDate = addDays(startDate, MAX_SHARE_RANGE_DAYS - 1);
+  return [startDate, endDate > lastAllowedDate ? lastAllowedDate : endDate];
 }
 
 /** 同一天同一角色的文案要稳定,不能每次打开预览都换一句 */
-const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+const hashText = (text: string) => [...text].reduce((hash, character) => (hash * 31 + character.charCodeAt(0)) >>> 0, 7);
 
-export function buildShareData(checkIns: readonly CheckIn[], profile: Profile | null, from: string, to: string): ShareData {
-  const byDate = new Map<string, CheckIn[]>();
-  for (const c of [...checkIns].filter((x) => x.date >= from && x.date <= to).sort((a, b) => a.at.localeCompare(b.at))) {
-    byDate.set(c.date, [...(byDate.get(c.date) ?? []), c]);
+export function buildShareCardData(
+  checkIns: readonly CheckIn[],
+  profile: Profile | null,
+  fromDate: DateKey,
+  toDate: DateKey,
+): ShareCardData {
+  const checkInsByDate = new Map<DateKey, CheckIn[]>();
+  const checkInsInRange = checkIns
+    .filter((checkIn) => checkIn.date >= fromDate && checkIn.date <= toDate)
+    .sort(compareByTime);
+  for (const checkIn of checkInsInRange) {
+    checkInsByDate.set(checkIn.date, [...(checkInsByDate.get(checkIn.date) ?? []), checkIn]);
   }
 
-  const days: (DayStamp | null)[] = [];
-  for (let d = from; d <= to; d = addDays(d, 1)) {
-    const list = byDate.get(d);
-    if (!list) { days.push(null); continue; }
-    const first = list.find((c) => c.counted) ?? list[0];
-    const [characterId, stage] = first.stampId.split(':');
-    days.push({ date: d, characterId, stage: +stage, mood: list[list.length - 1].stampId.split(':')[2] as Mood });
+  const dayStamps: (DayStamp | null)[] = [];
+  for (let date = fromDate; date <= toDate; date = addDays(date, 1)) {
+    const dayCheckIns = checkInsByDate.get(date);
+    if (!dayCheckIns) {
+      dayStamps.push(null);
+      continue;
+    }
+    const representativeCheckIn = dayCheckIns.find((checkIn) => checkIn.counted) ?? dayCheckIns[0];
+    const { characterId, stage } = parseStampId(representativeCheckIn.stampId);
+    const { mood } = parseStampId(dayCheckIns[dayCheckIns.length - 1].stampId);
+    dayStamps.push({ date, characterId, stage, mood });
   }
 
-  const stamped = days.filter((d): d is DayStamp => d !== null);
-  let longest = 0, run = 0;
-  days.forEach((d) => { run = d ? run + 1 : 0; longest = Math.max(longest, run); });
+  const checkedInStamps = dayStamps.filter((stamp): stamp is DayStamp => stamp !== null);
 
-  const moodCount = new Map<Mood, number>();
-  for (const d of stamped) moodCount.set(d.mood, (moodCount.get(d.mood) ?? 0) + 1);
-  const top = MOODS.map((m) => ({ mood: m.id, count: moodCount.get(m.id) ?? 0 })).reduce((a, b) => (b.count > a.count ? b : a), { mood: 'happy' as Mood, count: 0 });
+  let longestStreak = 0;
+  let currentStreak = 0;
+  for (const stamp of dayStamps) {
+    currentStreak = stamp ? currentStreak + 1 : 0;
+    longestStreak = Math.max(longestStreak, currentStreak);
+  }
 
-  const headline = stamped[stamped.length - 1] ?? null;
-  const counted = headline ? byDate.get(headline.date)!.find((c) => c.counted) : undefined;
-  const quotes = headline ? charDef(headline.characterId).quotes : [];
+  const dayCountByMood = new Map<Mood, number>();
+  for (const stamp of checkedInStamps) dayCountByMood.set(stamp.mood, (dayCountByMood.get(stamp.mood) ?? 0) + 1);
+  // 并列时取更靠前(更好)的心情,所以按 MOODS 的顺序比较
+  const mostFrequent = MOODS
+    .map((option) => ({ mood: option.id, count: dayCountByMood.get(option.id) ?? 0 }))
+    .reduce((best, candidate) => (candidate.count > best.count ? candidate : best), { mood: DEFAULT_MOOD, count: 0 });
+
+  const headlineStamp = checkedInStamps[checkedInStamps.length - 1] ?? null;
+  const headlineCountedCheckIn = headlineStamp ? checkInsByDate.get(headlineStamp.date)!.find((checkIn) => checkIn.counted) : undefined;
+  const quotes = headlineStamp ? getCharacter(headlineStamp.characterId).quotes : [];
 
   return {
-    from, to, days, checkedDays: stamped.length, longest,
-    topMood: top.count ? top : null,
-    headline,
-    streak: counted?.streak ?? 0,
-    quote: headline ? quotes[hash(`${headline.date}${headline.characterId}`) % quotes.length] : '',
+    fromDate,
+    toDate,
+    dayStamps,
+    checkedInDayCount: checkedInStamps.length,
+    longestStreak,
+    mostFrequentMood: mostFrequent.count ? mostFrequent : null,
+    headlineStamp,
+    headlineStreak: headlineCountedCheckIn?.streak ?? 0,
+    quote: headlineStamp ? quotes[hashText(`${headlineStamp.date}${headlineStamp.characterId}`) % quotes.length] : '',
     nickname: !profile || profile.anonymous || !profile.nickname ? '匿名噗友' : profile.nickname,
   };
 }
 
-/** 范围日历:周一开头,把 from..to 补齐成整周;范围外的格子为 null */
-export function calendarCells(data: ShareData): { date: string; stamp: DayStamp | null }[][] {
-  const stampOf = new Map(data.days.filter((d): d is DayStamp => d !== null).map((d) => [d.date, d]));
-  const weeks: { date: string; stamp: DayStamp | null }[][] = [];
-  for (let c = weekDays(data.from)[0]; c <= data.to; c = addDays(c, 7)) {
-    weeks.push(weekDays(c).map((date) => ({ date, stamp: stampOf.get(date) ?? null })));
+/** 范围日历:周一开头,把 fromDate..toDate 补齐成整周;范围外的格子由画卡片的一方跳过 */
+export function getCalendarWeeks(data: ShareCardData): CalendarCell[][] {
+  const stampByDate = new Map(data.dayStamps.filter((stamp): stamp is DayStamp => stamp !== null).map((stamp) => [stamp.date, stamp]));
+  const weeks: CalendarCell[][] = [];
+  for (let weekStart = getWeekDateKeys(data.fromDate)[0]; weekStart <= data.toDate; weekStart = addDays(weekStart, 7)) {
+    weeks.push(getWeekDateKeys(weekStart).map((date) => ({ date, stamp: stampByDate.get(date) ?? null })));
   }
   return weeks;
 }
 
 /** 按宽度折行(中文算 1,英文数字算 0.55),卡片是 SVG,没有自动换行 */
-export function wrapText(text: string, limit: number): string[] {
+export function wrapText(text: string, maxWidth: number): string[] {
   const lines: string[] = [];
-  let line = '', w = 0;
-  for (const ch of text) {
-    const cw = ch.charCodeAt(0) < 128 ? 0.55 : 1;
-    if (w + cw > limit && line) { lines.push(line); line = ''; w = 0; }
-    line += ch; w += cw;
+  let currentLine = '';
+  let currentWidth = 0;
+  for (const character of text) {
+    const characterWidth = character.charCodeAt(0) < 128 ? 0.55 : 1;
+    if (currentWidth + characterWidth > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = '';
+      currentWidth = 0;
+    }
+    currentLine += character;
+    currentWidth += characterWidth;
   }
-  if (line) lines.push(line);
+  if (currentLine) lines.push(currentLine);
   return lines;
 }

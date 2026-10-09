@@ -1,18 +1,11 @@
-import { useStore } from 'zustand';
-import { createStore } from 'zustand/vanilla';
-import { appStore } from '../../hooks/useAppStore';
-import { backendFromEnv } from '../api/supabaseSyncApi';
-import { createSyncEngine, type SyncStatus } from './syncEngine';
-import { localStorageMeta } from './syncMeta';
+import { appStore } from '../../stores/appStore';
+import { createSyncApiFromEnvironment } from '../api/supabaseSyncApi';
+import { createSyncEngine } from './syncEngine';
+import { localStorageSyncMetaStore } from './syncMeta';
 
-const backend = backendFromEnv();
+const syncApi = createSyncApiFromEnvironment();
 
 /** 没配置 Supabase(没有 .env.local)时为 null,整个同步功能和相关界面都不出现 */
-export const syncEngine = backend ? createSyncEngine({ store: appStore, backend, metaStore: localStorageMeta }) : null;
-
-const unavailable = createStore<SyncStatus | null>()(() => null);
-
-/** 同步状态;没配置后端时返回 null(hooks 不能条件调用,所以没有引擎时订阅一个永远是 null 的 store) */
-export function useSyncStatus(): SyncStatus | null {
-  return useStore((syncEngine?.status ?? unavailable) as typeof unavailable);
-}
+export const syncEngine = syncApi
+  ? createSyncEngine({ store: appStore, api: syncApi, syncMetaStore: localStorageSyncMetaStore })
+  : null;

@@ -1,3 +1,3 @@
-/** art 目录共用的描边色与 SVG 描边属性 */
-export const INK = '#3a2a22';
-export const STROKE = { stroke: INK, strokeWidth: 2.5, strokeLinejoin: 'round' as const };
+/** components/poo 下所有绘制共用的描边色和身体描边属性 */
+export const INK_COLOR = '#3a2a22';
+export const BODY_OUTLINE = { stroke: INK_COLOR, strokeWidth: 2.5, strokeLinejoin: 'round' as const };
