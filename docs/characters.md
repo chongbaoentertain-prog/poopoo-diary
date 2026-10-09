@@ -30,14 +30,14 @@
 
 ## 新增一只角色
 
-1. 在 `src/data/characters/<属性>.ts` 的 `characters` 里加一条:`id`(`属性-英文名`,存档靠它)、`name`(以「噗」结尾)、`stage4`、`stage5`、`acc4`、`acc5`、`quotes`(分享卡片上的搞笑文案,至少 3 句,要贴合角色,例如社畜噗:“像牛马一样,在屎海中奋力前行”)。
-2. 在 `src/components/art/kits/<属性>.tsx` 加同 id 的 `{ prop, scene, front? }`,画法见 [art-guide.md](art-guide.md)。
-3. 需要新配饰:先在 `data/characters/types.ts` 的 `Acc` 里加名字,再到 `art/Gear.tsx` 画出来。
+1. 在 `frontend/src/data/characters/<属性>.ts` 的 `characters` 里加一条:`id`(`属性-英文名`,存档靠它)、`name`(以「噗」结尾)、`stage4Name`、`stage5Name`、`stage4Accessories`、`stage5ExtraAccessories`、`quotes`(分享卡片上的搞笑文案,至少 3 句,要贴合角色,例如社畜噗:“像牛马一样,在屎海中奋力前行”)。
+2. 在 `frontend/src/components/poo/characterKits/<属性>Kits.tsx` 加同 id 的 `{ prop, scene, foreground? }`,画法见 [art-guide.md](art-guide.md)。
+3. 需要新配饰:先在 `types/character.ts` 的 `Accessory` 里加名字,再到 `components/poo/PooGear.tsx` 画出来。
 4. 跑 `npm test`:`characters.test.ts` 会检查 id 不重复、每系列 3 只、每只都有美术、至少 3 句文案。
 5. 更新上面的表格。
 
-> 想改每系列只数,同时改 `index.ts` 里的 `SHADE`(每只身体深浅不同)和那条测试。
+> 想改每系列只数,同时改 `data/characters/index.ts` 里的 `BODY_SHADE_VARIANTS`(每只身体深浅不同)和那条测试。
 
 ## 下架角色
 
-直接删数据和美术条目即可。已有用户的存档会在读档时被自动清理(见 [architecture.md](architecture.md#读档修正normalizestate))。**id 一旦发布就不要复用**,否则旧存档会指向别的角色。
+直接删数据和美术条目即可。已有用户的存档会在读档时被自动清理(见 [architecture.md](architecture.md#读档修正normalizeappstate))。**id 一旦发布就不要复用**,否则旧存档会指向别的角色。

@@ -5,23 +5,23 @@
 ## 工作方式
 
 - 第一次打开时,本机静默生成一个存档码(80 位随机,形如 `K7MQ-X2PD-9WTR-4HJF`),存在 localStorage。用户什么都不用做。
-- 服务器只收到存档码的 SHA-256(下面叫 key),数据按 key 归属,**数据库里没有存档码本身**。
+- 服务器只收到存档码的 SHA-256(代码里叫 vaultKey),数据按 key 归属,**数据库里没有存档码本身**。
 - 换设备:在「个人 → 存档与同步」或新手引导页输入存档码,云端数据会和本机已有数据**合并**,不会覆盖。
 - 没配置 Supabase(没有 `.env.local`)时,同步和相关界面整体隐藏,app 照常本地使用。
 
 ## 本地优先
 
-页面永远读写本地存档,同步引擎(`src/sync/engine.ts`)在后台对齐,所以**离线照常签到**,联网后自动补推。
+页面永远读写本地存档,同步引擎(`frontend/src/services/sync/syncEngine.ts`)在后台对齐,所以**离线照常签到**,联网后自动补推。
 
 每一轮同步:`(若有待通知的清空)→ 拉取云端变动并合并 → 把本地新增的推上去`。触发时机:本地有变动(防抖 1.5 秒)、恢复联网、回到页面、每分钟轮询。
 
-只同步**原始数据**:签到记录、资料(昵称/头像/当前角色)、角色的拥有与毕业状态。经验、形态、连续天数不同步,一律由 `recomputeAll` 重算,所以规则调整不会让云端数据过期。
+只同步**原始数据**:签到记录、资料(昵称/头像/当前角色)、角色的拥有与毕业状态。经验、形态、连续天数不同步,一律由 `recomputeFromCheckIns` 重算,所以规则调整不会让云端数据过期。
 
-## 合并规则(`src/sync/merge.ts`)
+## 合并规则(`frontend/src/domain/mergeRemoteSnapshot.ts`)
 
 | 数据 | 规则 |
 |---|---|
-| 签到记录 | 只增不改、id 唯一,按 id 取并集。同一天两台设备各签一次时,合并后只保留最早的一条计经验(`normalizeState`) |
+| 签到记录 | 只增不改、id 唯一,按 id 取并集。同一天两台设备各签一次时,合并后只保留最早的一条计经验(`normalizeAppState`) |
 | 角色进度 | 取并集;毕业状态只会 false → true |
 | 资料 | 后写者胜(客户端毫秒时间戳) |
 | 清空 / 恢复 | 见下 |
@@ -57,14 +57,14 @@
 ## 部署步骤
 
 1. 在 [supabase.com](https://supabase.com) 新建项目,Project Settings → API 里拿到 Project URL 和 anon / publishable key。
-2. 复制 `.env.example` 为 `.env.local`,填入这两个值。**不要填 service_role / secret key。**
-3. 打开 Supabase 控制台 SQL Editor,把 [supabase/migrations/0001_sync.sql](../supabase/migrations/0001_sync.sql) 整份贴进去执行(可重复执行)。
-4. 运行 `node scripts/check-supabase.mjs` 联调检查,应全部 ✓。
+2. 复制 `frontend/.env.example` 为 `frontend/.env.local`,填入这两个值。**不要填 service_role / secret key。**
+3. 打开 Supabase 控制台 SQL Editor,把 [backend/supabase/migrations/0001_sync.sql](../backend/supabase/migrations/0001_sync.sql) 整份贴进去执行(可重复执行)。
+4. 运行 `node backend/scripts/check-supabase.mjs` 联调检查,应全部 ✓。
 5. 如果 SQL 末尾提示 `pg_cron 不可用`:到 Database → Extensions 启用 `pg_cron`,再执行一次 SQL。不启用不影响同步,只是软删除的数据不会自动清除。
-6. `npm run dev`,在个人页看到「已同步」即成功。
+6. 在 `frontend/` 下运行 `npm run dev`,在个人页看到「已同步」即成功。
 
 ## 改动注意
 
-- **改 SQL 时同步改 `tests/fakeBackend.ts`**(内存版服务器,行为要和 SQL 对齐),并重新跑 `scripts/check-supabase.mjs`。
-- 单元测试(`tests/sync.test.ts`)覆盖多设备合并、离线、清空等场景,但**跑的是内存版服务器,不是真 SQL**,所以联调脚本不能省。
+- **改 SQL 时同步改 `frontend/tests/fakeSyncApi.ts`**(内存版服务器,行为要和 SQL 对齐),并重新跑 `backend/scripts/check-supabase.mjs`。
+- 单元测试(`frontend/tests/sync.test.ts`)覆盖多设备合并、离线、清空等场景,但**跑的是内存版服务器,不是真 SQL**,所以联调脚本不能省。
 - 同步状态和业务存档分开存(`poopoo-diary:sync:v1`),清除 localStorage 会同时丢掉存档码,务必提醒用户保存。
