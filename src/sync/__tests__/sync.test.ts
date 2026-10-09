@@ -317,3 +317,21 @@ describe('撤销清空(30 天内)', () => {
     expect(a.engine.status.getState().clearedAt).not.toBeNull();
   });
 });
+
+describe('检查云端数据', () => {
+  it('报告云端真实的记录数;空存档码和离线分别给出提示;不改动本地', async () => {
+    const { device, ctl } = setup();
+    const a = device();
+    onboard(a);
+    a.get().checkIn('2026-10-06');
+    a.get().checkIn('2026-10-07');
+    expect(await a.engine.verifyCloud()).toEqual({ ok: true, checkIns: 0, characters: 0, nickname: null }); // 还没同步,云端是空的
+
+    await a.engine.syncNow();
+    expect(await a.engine.verifyCloud()).toEqual({ ok: true, checkIns: 2, characters: 1, nickname: '阿宝' });
+    expect(a.get().checkIns).toHaveLength(2);
+
+    ctl.offline = true;
+    expect(await a.engine.verifyCloud()).toEqual({ ok: false, error: '现在连不上服务器,请联网后再试' });
+  });
+});

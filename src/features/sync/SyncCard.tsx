@@ -16,6 +16,7 @@ export function SyncCard() {
   const [shown, setShown] = useState(false);
   const [copied, setCopied] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [check, setCheck] = useState<string | null>(null);
   const [, tick] = useState(0);
   useEffect(() => { const t = setInterval(() => tick((n) => n + 1), 30_000); return () => clearInterval(t); }, []);
   if (!syncEngine || !status) return null;
@@ -29,6 +30,13 @@ export function SyncCard() {
   const copy = async () => {
     try { await navigator.clipboard.writeText(status.code); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { setShown(true); }
     syncEngine!.acknowledgeCode();
+  };
+
+  const verify = async () => {
+    setCheck('检查中…');
+    const r = await syncEngine!.verifyCloud();
+    setCheck(!r.ok ? r.error : r.checkIns + r.characters === 0 ? '云端还没有这个存档码的数据。先签一次到,等状态变成「已同步」再检查。'
+      : `云端已保存 ${r.checkIns} 条签到记录、${r.characters} 只角色${r.nickname ? `,昵称「${r.nickname}」` : ''}。存档码有效 ✓`);
   };
 
   return (
@@ -54,6 +62,8 @@ export function SyncCard() {
         <p className="text-[11px] leading-relaxed opacity-70">
           换设备或清除浏览器数据后,靠它找回记录。请截图或抄下来收好;拿到存档码的人能看到你的记录,不要发给别人。
         </p>
+        <button onClick={verify} className="text-xs underline">检查云端数据</button>
+        {check && <p role="status" className="text-xs">{check}</p>}
       </div>
 
       <div className="space-y-2 border-t border-grout pt-3">

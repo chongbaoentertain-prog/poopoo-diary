@@ -149,6 +149,16 @@ export function createSyncEngine(opts: {
       void syncNow();
     },
 
+    /** 直接问服务器:这个存档码对应的云端数据有多少。不合并、不改任何东西,只用来验证存档码和云端是否真的有数据 */
+    async verifyCloud(): Promise<{ ok: true; checkIns: number; characters: number; nickname: string | null } | { ok: false; error: string }> {
+      try {
+        const snap = await backend.pull(await codeToKey(metaStore.load().code), null);
+        return { ok: true, checkIns: snap.checkIns.length, characters: snap.progress.length, nickname: snap.profile?.nickname || null };
+      } catch (e) {
+        return { ok: false, error: e instanceof OfflineError ? '现在连不上服务器,请联网后再试' : '检查失败,请稍后再试' };
+      }
+    },
+
     /** 撤销清空(30 天内):云端把那次清空删掉的数据恢复,再整体拉回来,和现在的数据合并 */
     async undoClear(): Promise<{ ok: true } | { ok: false; error: string }> {
       try {
