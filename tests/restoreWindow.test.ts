@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { restoreDaysLeft } from '../restoreWindow';
+import { restoreDaysLeft } from '../src/sync/restoreWindow';
 
 describe('恢复期', () => {
   const t0 = Date.parse('2026-10-01T00:00:00Z');

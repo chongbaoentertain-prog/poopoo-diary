@@ -30,9 +30,11 @@ npm run build   # 类型检查 + 打包
 
 ## 测试
 
+所有测试都放在项目根目录的 `tests/` 里,不放在 `src/` 下;`tests/fakeBackend.ts` 是测试用的内存版服务器,不是测试文件。
+
 覆盖经验规则、存档、签到、分享卡片数据、角色表完整性,以及多设备同步的各种场景(离线、两台设备同一天签到、清空、恢复等,用内存版服务器)。
 
-**改同步的 SQL 时**,同步修改 `src/sync/__tests__/fakeBackend.ts`(内存版服务器,行为要和 SQL 对齐),并重新运行 `node scripts/check-supabase.mjs`。单元测试跑的不是真 SQL,联调脚本不能省。
+**改同步的 SQL 时**,同步修改 `tests/fakeBackend.ts`(内存版服务器,行为要和 SQL 对齐),并重新运行 `node scripts/check-supabase.mjs`。单元测试跑的不是真 SQL,联调脚本不能省。
 
 ## 约定
 

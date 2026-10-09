@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CHARACTERS } from '../../../data/characters';
-import type { CheckIn } from '../../../domain/types';
-import { buildShareData, calendarCells, MAX_SHARE_DAYS, rangeFor, wrapText } from '../cardData';
+import { CHARACTERS } from '../src/data/characters';
+import type { CheckIn } from '../src/domain/types';
+import { buildShareData, calendarCells, MAX_SHARE_DAYS, rangeFor, wrapText } from '../src/features/share/cardData';
 
 let n = 0;
 const ci = (date: string, mood: string, over: Partial<CheckIn> = {}): CheckIn => ({

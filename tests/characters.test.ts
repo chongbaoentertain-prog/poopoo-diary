@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { KITS } from '../../components/art/kits';
-import { CHARACTERS } from '../characters';
+import { KITS } from '../src/components/art/kits';
+import { CHARACTERS } from '../src/data/characters';
 
 describe('角色表', () => {
   it('id 不重复,名字以「噗」结尾', () => {

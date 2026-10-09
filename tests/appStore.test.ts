@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createMemoryRepo } from '../../storage/memoryRepo';
-import { createAppStore } from '../appStore';
-import { currentStreak, groupByDate } from '../selectors';
+import { createMemoryRepo } from '../src/storage/memoryRepo';
+import { createAppStore } from '../src/store/appStore';
+import { currentStreak, groupByDate } from '../src/store/selectors';
 
 const setup = () => {
   const repo = createMemoryRepo();
@@ -50,7 +50,7 @@ describe('appStore', () => {
   });
 });
 
-import { addDays } from '../../domain/date';
+import { addDays } from '../src/domain/date';
 const range = (a: string, b: string) => { const o: string[] = []; for (let d = a; d <= b; d = addDays(d, 1)) o.push(d); return o; };
 
 describe('连续打卡不因跨月重置', () => {

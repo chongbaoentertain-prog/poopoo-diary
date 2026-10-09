@@ -65,6 +65,6 @@
 
 ## 改动注意
 
-- **改 SQL 时同步改 `src/sync/__tests__/fakeBackend.ts`**(内存版服务器,行为要和 SQL 对齐),并重新跑 `scripts/check-supabase.mjs`。
-- 单元测试(`src/sync/__tests__/sync.test.ts`)覆盖多设备合并、离线、清空等场景,但**跑的是内存版服务器,不是真 SQL**,所以联调脚本不能省。
+- **改 SQL 时同步改 `tests/fakeBackend.ts`**(内存版服务器,行为要和 SQL 对齐),并重新跑 `scripts/check-supabase.mjs`。
+- 单元测试(`tests/sync.test.ts`)覆盖多设备合并、离线、清空等场景,但**跑的是内存版服务器,不是真 SQL**,所以联调脚本不能省。
 - 同步状态和业务存档分开存(`poopoo-diary:sync:v1`),清除 localStorage 会同时丢掉存档码,务必提醒用户保存。
