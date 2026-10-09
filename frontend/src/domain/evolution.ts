@@ -1,5 +1,5 @@
 import { MAX_STAGE, STAGE_THRESHOLDS } from './rules';
-import type { CharacterProgress } from './types';
+import type { CharacterProgress } from '../types/diary';
 
 export function stageForXp(xp: number): number {
   let stage = 1;

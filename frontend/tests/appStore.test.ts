@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createMemoryRepo } from '../src/storage/memoryRepo';
-import { createAppStore } from '../src/store/appStore';
-import { currentStreak, groupByDate } from '../src/store/selectors';
+import { createMemoryRepo } from '../src/services/storage/memoryRepository';
+import { createAppStore } from '../src/stores/createAppStore';
+import { currentStreak, groupByDate } from '../src/stores/selectors';
 
 const setup = () => {
   const repo = createMemoryRepo();

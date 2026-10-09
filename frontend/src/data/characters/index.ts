@@ -2,12 +2,12 @@ import { earth } from './earth';
 import { fire } from './fire';
 import { gold } from './gold';
 import { poison } from './poison';
-import type { CharacterDef, Mood } from './types';
+import type { CharacterDef, Mood } from '../../types/character';
 import { water } from './water';
 import { weak } from './weak';
 import { wood } from './wood';
 
-export type { Acc, CharacterDef, Mood } from './types';
+export type { Acc, CharacterDef, Mood } from '../../types/character';
 
 // 7 个系列(属性)× 每系列 3 只。新增角色:在对应系列文件加一条,再到 components/art/kits 补它的道具和场景(见 docs/characters.md)。
 const SERIES = [gold, wood, water, fire, earth, weak, poison];

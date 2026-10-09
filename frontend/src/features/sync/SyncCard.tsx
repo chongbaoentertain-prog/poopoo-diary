@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { syncEngine, useSyncStatus } from '../../sync';
-import { useAppStore } from '../../store/useAppStore';
+import { syncEngine, useSyncStatus } from '../../services/sync';
+import { useAppStore } from '../../hooks/useAppStore';
 import { RestoreForm } from './RestoreForm';
 import { UndoClear } from './UndoClear';
 

@@ -1,5 +1,5 @@
-import { useAppStore } from '../../store/useAppStore';
-import { useSyncStatus } from '../../sync';
+import { useAppStore } from '../../hooks/useAppStore';
+import { useSyncStatus } from '../../services/sync';
 
 /** 签满 3 天后,轻轻提醒一次保存存档码(没有账号,存档码丢了就找不回数据) */
 export function CodeReminder({ onGo }: { onGo: () => void }) {

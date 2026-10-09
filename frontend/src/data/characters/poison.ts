@@ -1,4 +1,4 @@
-import type { Series } from './types';
+import type { Series } from '../../types/character';
 
 export const poison: Series = {
   key: 'poison', attr: '中毒', tint: '#6b7a3a', accent: '#9b59d0',

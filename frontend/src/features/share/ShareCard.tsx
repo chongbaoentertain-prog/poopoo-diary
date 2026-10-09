@@ -1,7 +1,7 @@
 import type { Ref } from 'react';
-import { Poo } from '../../components/art/Poo';
+import { Poo } from '../../components/poo/Poo';
 import { charDef, MOODS } from '../../data/characters';
-import { calendarCells, wrapText, type ShareData } from './cardData';
+import { calendarCells, wrapText, type ShareData } from './shareCardData';
 
 export const CARD_W = 360;
 const FONT = "'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif"; // 导出成图片时读不到网页字体,只能用系统字体

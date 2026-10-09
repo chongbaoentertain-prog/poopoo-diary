@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { recordCheckIn } from '../src/domain/checkin';
+import { recordCheckIn } from '../src/domain/recordCheckIn';
 import { applyXp, graduate, newProgress, stageForXp } from '../src/domain/evolution';
 import { streakOnDate } from '../src/domain/streak';
 import { multiplierForStreak, xpForStreak } from '../src/domain/xp';
-import type { CheckIn } from '../src/domain/types';
+import type { CheckIn } from '../src/types/diary';
 
 describe('xp', () => {
   it('连续 buff 叠加并在第 11 天封顶 2x', () => {

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createMemoryRepo } from '../src/storage/memoryRepo';
-import { createAppStore } from '../src/store/appStore';
-import { codeToKey, generateCode, normalizeCode } from '../src/sync/code';
-import { createSyncEngine } from '../src/sync/engine';
-import { createMemoryMeta } from '../src/sync/meta';
+import { createMemoryRepo } from '../src/services/storage/memoryRepository';
+import { createAppStore } from '../src/stores/createAppStore';
+import { codeToKey, generateCode, normalizeCode } from '../src/services/sync/saveCode';
+import { createSyncEngine } from '../src/services/sync/syncEngine';
+import { createMemoryMeta } from '../src/services/sync/syncMeta';
 import { createFakeBackend } from './fakeBackend';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

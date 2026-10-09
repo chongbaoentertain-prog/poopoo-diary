@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { appStore } from '../../store/useAppStore';
-import { syncEngine } from '../../sync';
+import { appStore } from '../../hooks/useAppStore';
+import { syncEngine } from '../../services/sync';
 
 const CONFIRM_WORD = '清空';
 

@@ -1,4 +1,4 @@
-import type { Series } from './types';
+import type { Series } from '../../types/character';
 
 export const weak: Series = {
   key: 'weak', attr: '衰弱', tint: '#a89a86', accent: '#9aa7b5',

@@ -1,4 +1,4 @@
-import type { Series } from './types';
+import type { Series } from '../../types/character';
 
 export const earth: Series = {
   key: 'earth', attr: '土', tint: '#8a5a3c', accent: '#b08a55',

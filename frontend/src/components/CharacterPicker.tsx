@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CHARACTERS, type CharacterDef } from '../data/characters';
-import { Poo } from './art/Poo';
+import { Poo } from './poo/Poo';
 
 const ATTRS = ['全部', ...new Set(CHARACTERS.map((c) => c.attr))];
 const STAGES = [1, 2, 3, 4, 5];

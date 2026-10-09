@@ -1,5 +1,5 @@
-import { Poo } from './art/Poo';
-import { useAppStore } from '../store/useAppStore';
+import { Poo } from './poo/Poo';
+import { useAppStore } from '../hooks/useAppStore';
 
 /** 头像 = 你拥有的某只噗(当前形态),不再是 emoji */
 export function Avatar({ size = 40 }: { size?: number }) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { KITS } from '../src/components/art/kits';
+import { KITS } from '../src/components/poo/characterKits';
 import { CHARACTERS } from '../src/data/characters';
 
 describe('角色表', () => {

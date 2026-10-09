@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { syncEngine, useSyncStatus } from '../../sync';
-import { restoreDaysLeft } from '../../sync/restoreWindow';
+import { syncEngine, useSyncStatus } from '../../services/sync';
+import { restoreDaysLeft } from '../../services/sync/restoreWindow';
 
 /** 清空之后 30 天内,提供「恢复清空的数据」。个人页和新手引导页(清空后会回到这里)共用 */
 export function UndoClear() {

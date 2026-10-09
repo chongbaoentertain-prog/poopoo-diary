@@ -1,4 +1,4 @@
-import type { Series } from './types';
+import type { Series } from '../../types/character';
 
 export const water: Series = {
   key: 'water', attr: '水', tint: '#6b7f95', accent: '#4aa3df',

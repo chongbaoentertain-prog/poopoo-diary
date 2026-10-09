@@ -1,4 +1,4 @@
-import type { Series } from './types';
+import type { Series } from '../../types/character';
 
 export const fire: Series = {
   key: 'fire', attr: '火', tint: '#a8512a', accent: '#e5483b',

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { syncEngine } from '../../sync';
+import { syncEngine } from '../../services/sync';
 
 /** 输入存档码,把另一台设备的数据恢复过来。个人页和新手引导页共用 */
 export function RestoreForm({ onDone }: { onDone?: () => void }) {

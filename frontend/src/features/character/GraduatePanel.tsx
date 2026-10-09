@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { CharacterPicker } from '../../components/CharacterPicker';
 import { CHARACTERS, charDef } from '../../data/characters';
 import { MAX_STAGE, STAGE_THRESHOLDS } from '../../domain/rules';
-import { activeProgress } from '../../store/selectors';
-import { useAppStore } from '../../store/useAppStore';
+import { activeProgress } from '../../stores/selectors';
+import { useAppStore } from '../../hooks/useAppStore';
 
 /** 满级后:继续养这一只(什么都不用做),或毕业并换新角色 */
 export function GraduatePanel({ onPicked }: { onPicked?: () => void }) {

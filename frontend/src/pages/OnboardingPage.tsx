@@ -1,0 +1,41 @@
+import { useState } from 'react';
+import { CharacterPicker } from '../components/CharacterPicker';
+import { CHARACTERS } from '../data/characters';
+import { RestoreForm } from '../features/sync/RestoreForm';
+import { UndoClear } from '../features/sync/UndoClear';
+import { syncEngine } from '../services/sync';
+import { useAppStore } from '../hooks/useAppStore';
+
+export function Onboarding() {
+  const complete = useAppStore((s) => s.completeOnboarding);
+  const [nickname, setNickname] = useState('');
+  const [characterId, setCharacterId] = useState(CHARACTERS[0].id);
+  const [restoring, setRestoring] = useState(false);
+
+  return (
+    <main className="mx-auto max-w-md space-y-6 p-6">
+      <h1 className="text-3xl font-semibold">噗噗日记</h1>
+      <UndoClear />
+      <label className="block space-y-1">
+        <span>昵称(留空即匿名,之后可在「个人」修改)</span>
+        <input value={nickname} maxLength={12} onChange={(e) => setNickname(e.target.value)}
+          placeholder="匿名噗友" className="w-full rounded-lg border border-grout bg-porcelain p-3" />
+      </label>
+      <div className="space-y-2">
+        <div>
+          <div className="font-semibold">挑选你的第一只伙伴</div>
+          <div className="text-sm">陪它每天打卡,看它一步步进化成最终形态。它也会成为你的头像。</div>
+        </div>
+        <CharacterPicker options={CHARACTERS} value={characterId} onPick={(c) => setCharacterId(c.id)} />
+      </div>
+      <button onClick={() => complete({ nickname: nickname.trim(), avatarId: characterId, anonymous: !nickname.trim() }, characterId)}
+        className="w-full rounded-xl bg-brown p-3 font-semibold text-porcelain">开始签到</button>
+      {syncEngine && (
+        <div className="space-y-2 border-t border-grout pt-4 text-center text-sm">
+          <button onClick={() => setRestoring(!restoring)} aria-expanded={restoring} className="underline">已经有存档码?恢复之前的记录</button>
+          {restoring && <RestoreForm />}
+        </div>
+      )}
+    </main>
+  );
+}

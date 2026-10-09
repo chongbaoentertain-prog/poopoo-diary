@@ -1,5 +1,5 @@
-import { OfflineError } from '../src/sync/backend';
-import type { PushPayload, RemoteCheckIn, RemoteProfile, RemoteProgress, RemoteSnapshot, SyncBackend } from '../src/sync/types';
+import { OfflineError } from '../src/services/api/supabaseSyncApi';
+import type { PushPayload, RemoteCheckIn, RemoteProfile, RemoteProgress, RemoteSnapshot, SyncBackend } from '../src/services/sync/syncTypes';
 
 interface Row<T> { v: T; updatedAt: number; deleted: boolean; clearedAt?: number }
 interface Vault {

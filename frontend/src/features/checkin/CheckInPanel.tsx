@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Poo } from '../../components/art/Poo';
+import { Poo } from '../../components/poo/Poo';
 import { charDef, MOODS, type Mood } from '../../data/characters';
 import { toDateKey } from '../../domain/date';
 import { progressToNext } from '../../domain/evolution';
 import { MAX_STAGE, STAGE_THRESHOLDS } from '../../domain/rules';
-import { activeProgress, currentStreak } from '../../store/selectors';
-import { useAppStore } from '../../store/useAppStore';
+import { activeProgress, currentStreak } from '../../stores/selectors';
+import { useAppStore } from '../../hooks/useAppStore';
 
 export function CheckInPanel({ date }: { date: string }) {
   const progress = useAppStore(activeProgress);

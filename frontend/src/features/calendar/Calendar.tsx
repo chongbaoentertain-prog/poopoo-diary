@@ -1,10 +1,10 @@
 import { useMemo, useRef, useState, type PointerEvent } from 'react';
-import { Poo } from '../../components/art/Poo';
+import { Poo } from '../../components/poo/Poo';
 import { charDef, type Mood } from '../../data/characters';
 import { addDays, toDateKey } from '../../domain/date';
-import { activeProgress, groupByDate } from '../../store/selectors';
-import { appStore, useAppStore } from '../../store/useAppStore';
-import { addMonths, inMonth, monthGrid, weekDays } from './grid';
+import { activeProgress, groupByDate } from '../../stores/selectors';
+import { appStore, useAppStore } from '../../hooks/useAppStore';
+import { addMonths, inMonth, monthGrid, weekDays } from '../../domain/calendarGrid';
 
 type View = 'week' | 'month';
 const HEAD = ['一', '二', '三', '四', '五', '六', '日'];

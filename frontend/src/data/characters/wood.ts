@@ -1,4 +1,4 @@
-import type { Series } from './types';
+import type { Series } from '../../types/character';
 
 export const wood: Series = {
   key: 'wood', attr: '木', tint: '#7d6b3b', accent: '#6aa84f',

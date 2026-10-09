@@ -1,4 +1,4 @@
-import type { Series } from './types';
+import type { Series } from '../../types/character';
 
 export const gold: Series = {
   key: 'gold', attr: '金', tint: '#b98a2e', accent: '#f4c542',
