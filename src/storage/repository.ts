@@ -6,6 +6,7 @@ export interface AppState {
   activeCharacterId: string | null;
   checkIns: CheckIn[];
   progress: CharacterProgress[]; // 含已毕业(图鉴)的角色
+  profileUpdatedAt?: number; // 资料(昵称/头像/当前角色)最后修改的毫秒时间戳,多设备同步时后写者胜
 }
 
 export const EMPTY_STATE: AppState = {
