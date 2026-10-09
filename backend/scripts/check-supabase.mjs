@@ -1,11 +1,11 @@
 // 联调检查:对真实的 Supabase 项目走一遍 推送 → 拉取 → 清空(软删除) → 再拉取。
-// 用法:先在 SQL Editor 执行 supabase/migrations/0001_sync.sql,再运行  node scripts/check-supabase.mjs
+// 用法:先在 SQL Editor 执行 backend/supabase/migrations 里的 SQL,再运行  node backend/scripts/check-supabase.mjs
 // 会用一个随机的测试存档码,不碰任何真实数据;测试留下的软删除行 30 天后自动清除。
 import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 const env = Object.fromEntries(
-  readFileSync(new URL('../.env.local', import.meta.url), 'utf8')
+  readFileSync(new URL('../../frontend/.env.local', import.meta.url), 'utf8')
     .split(/\r?\n/).filter((l) => l.includes('=') && !l.startsWith('#')).map((l) => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()]),
 );
 const url = env.VITE_SUPABASE_URL?.replace(/\/$/, '');
