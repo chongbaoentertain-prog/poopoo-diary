@@ -52,36 +52,5 @@
 **输入存档码后什么都没恢复?**
 先确认原来的设备显示「已同步」。没同步完,云端是空的。可以在「个人」页点「检查云端数据」,核对云端有多少记录。
 
-**怎么测试存档码有效?**
-同一个浏览器测不出来,因为它已经绑着这个码。用无痕窗口(或另一个浏览器)打开,在启动页输入存档码。测试前不要点「清空全部数据」。
-
 **清空之后输入存档码为什么还是空的?**
 存档码只是找回云端数据的钥匙,清空后云端数据已被标记删除。要找回请用「恢复清空的数据」,30 天内有效。
-
-## 系统构成
-
-```
-src/
-  domain/      纯逻辑:经验、连续天数、进化、重算。不依赖 React,有单元测试
-  storage/     本地存档(localStorage / 内存两种实现)
-  sync/        云端同步:存档码、合并规则、同步引擎
-  store/       状态管理和读档修正
-  data/        角色数据,每个属性一个文件
-  components/  跨页面组件,其中 art/ 是噗的全部绘制(身体、脸、配饰、每只角色的道具和场景)
-  features/    按页面划分:签到、日历、图鉴、个人、回顾、引导、分享、同步
-supabase/      数据库迁移(建表、权限、同步函数)
-scripts/       联调检查脚本
-docs/          详细文档
-```
-
-技术栈:React 18、TypeScript、Vite、Tailwind CSS、zustand、Vitest,云端用 Supabase。
-
-## 文档
-
-| 文档 | 内容 |
-|---|---|
-| [docs/architecture.md](docs/architecture.md) | 数据流、存档、读档修正、分享 |
-| [docs/sync.md](docs/sync.md) | 存档码同步的设计、合并规则、安全模型、部署步骤 |
-| [docs/characters.md](docs/characters.md) | 21 只角色名册,以及怎么新增、下架角色 |
-| [docs/art-guide.md](docs/art-guide.md) | 噗的绘制分层、坐标约定、怎么画道具和场景 |
-| [docs/development.md](docs/development.md) | 安装运行、开启云端同步、开发约定 |
