@@ -17,3 +17,12 @@ describe('角色表', () => {
     expect(Object.keys(KITS).sort()).toEqual(CHARACTERS.map((c) => c.id).sort());
   });
 });
+
+describe('分享文案', () => {
+  it('每只角色至少 3 句,且不重复', () => {
+    for (const c of CHARACTERS) {
+      expect(c.quotes.length, c.id).toBeGreaterThanOrEqual(3);
+      expect(new Set(c.quotes).size, c.id).toBe(c.quotes.length);
+    }
+  });
+});

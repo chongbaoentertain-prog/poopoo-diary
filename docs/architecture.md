@@ -33,6 +33,21 @@ AppState { version, profile, activeCharacterId, checkIns[], progress[] }
 
 > 已下架角色留下的签到记录会保留,日历上用第一只角色的样子兜底显示。
 
+## 分享(features/share)
+
+纯前端,不依赖后端,离线也能用:
+
+```
+cardData.ts   纯函数:按范围从 checkIns 算出卡片数据(每天的角色/形态/心情、统计、文案)
+ShareCard.tsx 整张卡片是一个 SVG,预览和导出共用同一份
+exportPng.ts  SVG → canvas → PNG;手机调起系统分享面板,不支持就下载
+ShareSheet.tsx 范围选择、隐藏昵称/心情、预览、分享
+```
+
+- 卡片只含角色、心情、连续天数,**不含具体时间、次数和存档码**。
+- 同一天同一角色的文案由日期哈希决定,预览多次不会变。
+- 导出时读不到网页字体,卡片里用系统字体栈。
+
 ## 约定
 
 - 日期一律是本地日期字符串 `YYYY-MM-DD`(`domain/date.ts`),不要用 `Date` 直接比较。

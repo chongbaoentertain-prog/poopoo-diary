@@ -13,6 +13,7 @@ export interface CharacterSeed {
   stage5: string;
   acc4: Acc[]; // 形态 4 配饰
   acc5: Acc[]; // 形态 5 在 acc4 基础上新增的配饰
+  quotes: string[]; // 分享卡片上的搞笑文案,要贴合角色(至少 3 句,随机轮换)
 }
 
 export interface Series {

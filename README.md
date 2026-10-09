@@ -19,6 +19,7 @@ npm run build   # 类型检查 + 打包
 | 连续 | 连续天数越长经验倍率越高(见 `src/domain/xp.ts`) |
 | 进化 | 经验达到阈值进化,共 5 个形态;满级后可毕业进图鉴,再选一只新的 |
 | 心情 | 签到时选 7 种心情之一:舒畅、淡定、躺平、憋屈、泄气、嫌弃、崩溃。日历取当天最新一次,图鉴取该角色最近一次 |
+| 分享 | 首页右上角「分享」:选当天 / 近 7 天 / 本月 / 自定义范围(最多 42 天),预览卡片后以图片分享或下载;可隐藏昵称和心情。卡片上的搞笑文案按角色定制 |
 | 角色 | 7 个属性(金木水火土衰弱中毒)× 每属性 3 只,共 21 只,名册见 [docs/characters.md](docs/characters.md) |
 
 ## 目录结构
@@ -32,7 +33,7 @@ src/
     characters/  角色数据,每个属性一个文件,index.ts 汇总
   components/  跨页面复用的组件
     art/       噗的全部绘制:身体 / 脸 / 配饰 / 每只角色的道具和场景(kits/)
-  features/    按页面划分:checkin、calendar、collection、profile、review、onboarding、character
+  features/    按页面划分:checkin、calendar、collection、profile、review、onboarding、character、share
 docs/          架构、角色名册、美术指南
 ```
 

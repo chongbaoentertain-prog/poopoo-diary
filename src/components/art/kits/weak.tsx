@@ -25,10 +25,10 @@ export const weakKits: Record<string, Kit> = {
     scene: (
       <g>
         <g {...L}><circle cx="16" cy="18" r="11" fill="#fff" /><path d="M16 18 V11 M16 18 L21 20" fill="none" strokeWidth="2" strokeLinecap="round" /></g>
-        {sheet(84, 14, 20)}{sheet(94, 34, -15)}{sheet(72, 6, -25)}
+        {sheet(82, 15, 20)}{sheet(89, 35, -15)}{sheet(69, 8, -25)}
       </g>
     ),
-    front: <g>{paperStack(0, 100, 4)}{paperStack(76, 100, 5)}</g>,
+    front: <g>{paperStack(0, 100, 4)}{paperStack(74, 100, 5)}</g>,
   },
   // 熬夜噗:咖啡 + 月亮星星
   'weak-nightowl': {
