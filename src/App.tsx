@@ -6,6 +6,7 @@ import { Review } from './features/review/Review';
 import { CheckInPanel } from './features/checkin/CheckInPanel';
 import { Collection } from './features/collection/Collection';
 import { Onboarding } from './features/onboarding/Onboarding';
+import { CodeReminder } from './features/sync/CodeReminder';
 import { ShareSheet } from './features/share/ShareSheet';
 import { ProfilePage } from './features/profile/ProfilePage';
 import { useAppStore } from './store/useAppStore';
@@ -36,6 +37,7 @@ export default function App() {
               </button>
               <button onClick={() => setSharing(true)} className="ml-auto rounded-full bg-porcelain px-4 py-2 text-sm font-semibold text-brown">分享</button>
             </header>
+            <CodeReminder onGo={() => setTab('me')} />
             <CheckInPanel date={selected} />
             <Calendar selected={selected} onSelect={setSelected} />
           </>

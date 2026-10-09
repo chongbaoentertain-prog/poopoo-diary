@@ -2,13 +2,14 @@ import { Avatar } from '../../components/Avatar';
 import { Poo } from '../../components/art/Poo';
 import { CHARACTERS, charDef } from '../../data/characters';
 import { GraduatePanel } from '../character/GraduatePanel';
+import { ClearDataButton } from '../sync/ClearDataButton';
+import { SyncCard } from '../sync/SyncCard';
 import { useAppStore } from '../../store/useAppStore';
 
 export function ProfilePage({ onPicked }: { onPicked: () => void }) {
   const profile = useAppStore((s) => s.profile)!;
   const progress = useAppStore((s) => s.progress);
   const update = useAppStore((s) => s.updateProfile);
-  const resetAll = useAppStore((s) => s.resetAll);
 
   return (
     <section className="space-y-4">
@@ -52,10 +53,9 @@ export function ProfilePage({ onPicked }: { onPicked: () => void }) {
 
       <div className="space-y-2 rounded-2xl bg-porcelain p-4"><div className="text-sm font-semibold">更换角色</div><GraduatePanel onPicked={onPicked} /></div>
 
-      <div className="flex justify-center pt-2">
-        <button onClick={() => window.confirm('清除所有签到记录和角色,重新开始?') && resetAll()}
-          className="rounded-xl border-2 border-brown bg-gold/40 px-6 py-2 font-semibold text-brown">重置全部数据</button>
-      </div>
+      <SyncCard />
+
+      <ClearDataButton />
     </section>
   );
 }

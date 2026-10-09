@@ -1,16 +1,21 @@
 import { useState } from 'react';
 import { CharacterPicker } from '../../components/CharacterPicker';
 import { CHARACTERS } from '../../data/characters';
+import { RestoreForm } from '../sync/RestoreForm';
+import { UndoClear } from '../sync/UndoClear';
+import { syncEngine } from '../../sync';
 import { useAppStore } from '../../store/useAppStore';
 
 export function Onboarding() {
   const complete = useAppStore((s) => s.completeOnboarding);
   const [nickname, setNickname] = useState('');
   const [characterId, setCharacterId] = useState(CHARACTERS[0].id);
+  const [restoring, setRestoring] = useState(false);
 
   return (
     <main className="mx-auto max-w-md space-y-6 p-6">
       <h1 className="text-3xl font-semibold">噗噗日记</h1>
+      <UndoClear />
       <label className="block space-y-1">
         <span>昵称(留空即匿名,之后可在「个人」修改)</span>
         <input value={nickname} maxLength={12} onChange={(e) => setNickname(e.target.value)}
@@ -25,6 +30,12 @@ export function Onboarding() {
       </div>
       <button onClick={() => complete({ nickname: nickname.trim(), avatarId: characterId, anonymous: !nickname.trim() }, characterId)}
         className="w-full rounded-xl bg-brown p-3 font-semibold text-porcelain">开始签到</button>
+      {syncEngine && (
+        <div className="space-y-2 border-t border-grout pt-4 text-center text-sm">
+          <button onClick={() => setRestoring(!restoring)} aria-expanded={restoring} className="underline">已经有存档码?恢复之前的记录</button>
+          {restoring && <RestoreForm />}
+        </div>
+      )}
     </main>
   );
 }

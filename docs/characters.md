@@ -40,4 +40,4 @@
 
 ## 下架角色
 
-直接删数据和美术条目即可。已有用户的存档会在读档时被自动清理(见 [architecture.md](architecture.md#读档修正fixloaded))。**id 一旦发布就不要复用**,否则旧存档会指向别的角色。
+直接删数据和美术条目即可。已有用户的存档会在读档时被自动清理(见 [architecture.md](architecture.md#读档修正normalizestate))。**id 一旦发布就不要复用**,否则旧存档会指向别的角色。
