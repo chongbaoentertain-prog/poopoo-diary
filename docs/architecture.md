@@ -110,7 +110,7 @@ AppState { version, profile, activeCharacterId, checkIns[], progress[], profileU
 shareCardData.ts    纯函数:按范围从 checkIns 算出卡片数据(每天的角色/形态/心情、统计、文案)
 ShareCard.tsx       整张卡片是一个 SVG,预览和导出共用同一份
 exportCardAsPng.ts  SVG → canvas → PNG;手机调起系统分享面板,不支持就下载
-ShareSheet.tsx      范围选择、隐藏昵称/心情、预览、分享
+ShareScreen.tsx     全屏分享页:范围选择、隐藏昵称/心情、预览、分享
 ```
 
 - 卡片只含角色、心情、连续天数,**不含具体时间、次数和存档码**。

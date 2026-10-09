@@ -1,1 +1,1 @@
-export { ShareSheet } from './ShareSheet';
+export { ShareScreen } from './ShareScreen';
