@@ -150,12 +150,19 @@ export function Calendar({ selectedDate, onSelectDate }: CalendarProps) {
           return (
             <button key={date} data-date={date} disabled={date > today} aria-label={`${date},${dayCheckIns.length} 次记录`} aria-pressed={isMultiSelectMode ? isPicked : date === selectedDate}
               onClick={(event) => (isMultiSelectMode ? event.detail === 0 && toggleDate(date) : onSelectDate(date))}
-              className={`relative flex aspect-square flex-col items-center justify-between p-1 text-xs disabled:opacity-40
+              className={`relative aspect-square text-xs disabled:opacity-40
                 ${isPicked ? 'bg-gold/50' : viewMode === 'month' && !isInSameMonth(date, anchorDate) ? 'bg-tile' : 'bg-porcelain'}
                 ${!isMultiSelectMode && date === selectedDate ? 'outline-2 outline-gold -outline-offset-2' : ''}`}>
-              <span className={date === today ? 'rounded-full bg-gold px-1.5 font-semibold' : ''}>{Number(date.slice(8))}</span>
-              {stamp && <Poo characterId={stamp.characterId} stage={stamp.stage} mood={mood} size={viewMode === 'week' ? 44 : 30} showScene={false} />}
-              {dayCheckIns.length > 1 && <span className="absolute right-0.5 top-0.5 text-[10px]">×{dayCheckIns.length}</span>}
+              {/* 日期和噗都用绝对定位,不撑开格子:格子宽度只有 ~47px,放不下 16px 日期 + 30px 噗,撑开会让有签到的格子比别的格子高 */}
+              <span className="absolute inset-x-0 top-0.5 flex justify-center">
+                <span className={`text-[10px] leading-none ${date === today ? 'rounded-full bg-gold px-1.5 py-px font-semibold' : ''}`}>{Number(date.slice(8))}</span>
+              </span>
+              {stamp && (
+                <span className="absolute inset-x-0.5 bottom-0.5 top-4 [&>svg]:size-full">
+                  <Poo characterId={stamp.characterId} stage={stamp.stage} mood={mood} size={viewMode === 'week' ? 44 : 30} showScene={false} />
+                </span>
+              )}
+              {dayCheckIns.length > 1 && <span className="absolute right-0.5 top-0.5 text-[10px] leading-none">×{dayCheckIns.length}</span>}
             </button>
           );
         })}
